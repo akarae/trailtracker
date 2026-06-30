@@ -52,7 +52,6 @@
     .sidebar-members {
       flex: 1; min-height: 0;
       display: flex; flex-direction: column;
-      overflow: hidden;
       border-top: 1px solid #0f3460;
     }
     .sidebar-members .section-title {
@@ -62,10 +61,13 @@
       flex-shrink: 0;
     }
     .member-list {
-      flex: 1; overflow-y: scroll; padding: 0 12px 10px;
-      display: flex; flex-direction: column; gap: 5px;
+      flex: 1;
+      height: 0;           /* flex 스크롤 핵심 트릭 */
+      overflow-y: scroll;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
+      padding: 0 12px 10px;
+      display: flex; flex-direction: column; gap: 5px;
     }
     /* 스크롤바 스타일 */
     .member-list::-webkit-scrollbar { width: 4px; }
