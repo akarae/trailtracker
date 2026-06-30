@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Trail Race Tracker</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Firebase compat (스크립트 태그 방식, 로컬 파일에서도 동작) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── 헤더 ── */
+    header {
+      background: #16213e;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 2px solid #0f3460;
+      flex-shrink: 0;
+      z-index: 200;
+    }
+    header h1 { font-size: 15px; font-weight: 700; color: #e94560; white-space: nowrap; }
+    .badge { background: #0f3460; padding: 3px 9px; border-radius: 12px; font-size: 11px; color: #aaa; white-space: nowrap; }
+    .fb-status { font-size: 11px; margin-left: auto; white-space: nowrap; }
+    .status-ok  { color: #2ecc71; }
+    .status-err { color: #e94560; }
+    .status-wait { color: #aaa; }
+
+    .menu-btn {
+      display: none;
+      align-items: center; justify-content: center;
+      background: #0f3460; border: none; color: #eee;
+      width: 32px; height: 32px; border-radius: 6px;
+      font-size: 18px; cursor: pointer; flex-shrink: 0;
+    }
+
+    /* ── 레이아웃 ── */
+    .main { display: flex; flex: 1; overflow: hidden; position: relative; }
+
+    /* ── 사이드바 ── */
+    .sidebar {
+      width: 268px;
+      background: #16213e;
+      border-right: 1px solid #0f3460;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+
+    /* 모바일 */
+    @media (max-width: 620px) {
+      .menu-btn { display: flex !important; }
+      .sidebar {
+        position: absolute;
+        top: 0; left: 0;
+        height: 100%;
+        z-index: 150;
+        transform: translateX(-100%);
+        transition: transform .25s;
+        width: 80vw;
+        max-width: 300px;
+      }
+      .sidebar.open { transform: translateX(0); box-shadow: 4px 0 20px rgba(0,0,0,.6); }
+      .overlay { display: block !important; }
+    }
+
+    .overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,.5);
+      z-index: 140;
+    }
+
+    /* ── 섹션 ── */
+    .section { padding: 12px 12px 10px; border-bottom: 1px solid #0f3460; }
+    .section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #e94560; margin-bottom: 8px; font-weight: 700; }
+
+    label { display: block; font-size: 11px; color: #aaa; margin-bottom: 3px; }
+
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      background: #0f3460;
+      border: 1px solid #1a4a8a;
+      border-radius: 6px;
+      color: #eee;
+      padding: 7px 10px;
+      font-size: 13px;
+      margin-bottom: 7px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    input:focus { border-color: #e94560; }
+    input:disabled { opacity: .5; }
+
+    /* 색상 */
+    .color-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    .color-swatch {
+      width: 26px; height: 26px; border-radius: 50%;
+      cursor: pointer; border: 3px solid transparent;
+      transition: transform .15s, border-color .15s;
+    }
+    .color-swatch:hover { transform: scale(1.15); }
+    .color-swatch.selected { border-color: #fff; transform: scale(1.2); }
+
+    /* 버튼 */
+    .btn {
+      width: 100%; padding: 8px; border: none;
+      border-radius: 6px; font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: opacity .2s; margin-top: 4px;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-primary  { background: #e94560; color: #fff; }
+    .btn-secondary{ background: #0f3460; color: #ddd; border: 1px solid #1a4a8a; }
+    .btn-red      { background: #c0392b; color: #fff; }
+
+    /* GPX */
+    .file-btn {
+      display: block; width: 100%; padding: 8px;
+      background: #0f3460; border: 1px dashed #1a4a8a;
+      border-radius: 6px; color: #aaa; font-size: 12px;
+      text-align: center; cursor: pointer; margin-bottom: 6px;
+      transition: border-color .2s, color .2s;
+    }
+    .file-btn:hover { border-color: #e94560; color: #e94560; }
+    #gpxInput { display: none; }
+
+    /* 지도 타입 */
+    .map-type-row { display: flex; gap: 5px; margin-bottom: 8px; }
+    .map-type-btn {
+      flex: 1; padding: 6px; border: 1px solid #1a4a8a;
+      border-radius: 6px; background: #0f3460; color: #aaa;
+      font-size: 11px; cursor: pointer; text-align: center;
+      transition: all .2s;
+    }
+    .map-type-btn.active { background: #e94560; border-color: #e94560; color: #fff; }
+
+    /* 내 상태 뱃지 */
+    .my-badge {
+      background: #0d2b0d; border: 1px solid #2ecc71;
+      border-radius: 6px; padding: 6px 10px;
+      font-size: 11px; color: #2ecc71; margin-bottom: 6px;
+      display: none; line-height: 1.5;
+    }
+
+    /* 갱신 */
+    .refresh-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+    .refresh-row input { margin-bottom: 0; flex: 1; }
+    #countdown { font-size: 11px; color: #f39c12; margin-top: 2px; min-height: 16px; }
+
+    /* 참가자 목록 */
+    .member-list { display: flex; flex-direction: column; gap: 5px; }
+    .member-item {
+      display: flex; align-items: center; gap: 7px;
+      background: #0f3460; border-radius: 6px;
+      padding: 7px 10px; font-size: 12px;
+      cursor: pointer; transition: background .15s;
+    }
+    .member-item:hover { background: #1a4a8a; }
+    .member-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .member-name { flex: 1; }
+    .member-me   { font-size: 10px; color: #2ecc71; }
+    .member-time { font-size: 10px; color: #555; }
+    .member-remove { cursor: pointer; color: #555; font-size: 16px; line-height: 1; }
+    .member-remove:hover { color: #e94560; }
+    .no-members { font-size: 12px; color: #555; padding: 4px 0; }
+
+    /* 지도 */
+    #map { flex: 1; z-index: 1; }
+
+    /* 토스트 */
+    #toast {
+      position: fixed; bottom: 16px; right: 16px;
+      background: #16213e; border: 1px solid #e94560;
+      color: #eee; padding: 9px 14px; border-radius: 8px;
+      font-size: 12px; z-index: 9999; opacity: 0;
+      pointer-events: none; transition: opacity .3s;
+      max-width: 260px; line-height: 1.5;
+    }
+    #toast.show { opacity: 1; }
+
+    /* 마커 */
+    .custom-marker {
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      border: 2px solid rgba(255,255,255,.75);
+      box-shadow: 0 2px 8px rgba(0,0,0,.5);
+    }
+    .custom-marker span {
+      transform: rotate(45deg);
+      font-size: 11px; font-weight: 700; color: #fff;
+      text-shadow: 0 1px 3px rgba(0,0,0,.8);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <button class="menu-btn" id="menuBtn" onclick="toggleSidebar()">☰</button>
+  <h1>🏃 Trail Tracker</h1>
+  <span class="badge" id="memberCount">0명</span>
+  <span class="fb-status status-wait" id="fbStatus">⚪ 연결 중</span>
+</header>
+
+<div class="main">
+  <!-- 모바일 오버레이 -->
+  <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+  <!-- 사이드바 -->
+  <div class="sidebar" id="sidebar">
+
+    <!-- 지도 타입 -->
+    <div class="section">
+      <div class="section-title">🗺 지도 타입</div>
+      <div class="map-type-row">
+        <div class="map-type-btn active" onclick="setMapType('street')">일반</div>
+        <div class="map-type-btn" onclick="setMapType('satellite')">위성</div>
+        <div class="map-type-btn" onclick="setMapType('topo')">지형</div>
+      </div>
+    </div>
+
+    <!-- GPX -->
+    <div class="section">
+      <div class="section-title">📍 경로 (모두에게 공유)</div>
+      <label for="gpxInput" class="file-btn" id="gpxLabel">📂 GPX 파일 업로드</label>
+      <input type="file" id="gpxInput" accept=".gpx" onchange="uploadGPX(event)" />
+      <button class="btn btn-secondary" onclick="deleteGPX()">경로 삭제</button>
+    </div>
+
+    <!-- 내 위치 등록 -->
+    <div class="section">
+      <div class="section-title">👤 내 위치 등록</div>
+      <div class="my-badge" id="myBadge"></div>
+      <label>이름</label>
+      <input type="text" id="nameInput" placeholder="이름 입력 (최대 8자)" maxlength="8" />
+      <label>색상 선택</label>
+      <div class="color-row" id="colorRow"></div>
+      <button class="btn btn-primary" id="joinBtn" onclick="joinRace()">📌 위치 공유 시작</button>
+      <button class="btn btn-red" id="leaveBtn" onclick="leaveRace()" style="display:none">⛔ 위치 공유 종료</button>
+    </div>
+
+    <!-- 갱신 주기 -->
+    <div class="section">
+      <div class="section-title">🔄 위치 갱신 주기</div>
+      <div class="refresh-row">
+        <input type="number" id="refreshSec" value="60" min="10" max="600" />
+        <span style="font-size:12px;color:#aaa">초</span>
+      </div>
+      <div id="countdown"></div>
+    </div>
+
+    <!-- 참가자 목록 -->
+    <div class="section" style="flex:1; min-height:100px">
+      <div class="section-title">🏅 참가자 목록</div>
+      <div class="member-list" id="memberList">
+        <div class="no-members">참가자 없음</div>
+      </div>
+    </div>
+
+  </div><!-- /sidebar -->
+
+  <div id="map"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════
+   Firebase 초기화
+═══════════════════════════════════════════ */
+const firebaseConfig = {
+  apiKey: "AIzaSyDMHoRvQUmCWaLj63odfs1zEml24iJV9Bc",
+  authDomain: "trailtracker-bf956.firebaseapp.com",
+  databaseURL: "https://trailtracker-bf956-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "trailtracker-bf956",
+  storageBucket: "trailtracker-bf956.firebasestorage.app",
+  messagingSenderId: "227255453355",
+  appId: "1:227255453355:web:8c0262d4e1ec0f686a99ee"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// Firebase 연결 상태
+db.ref('.info/connected').on('value', snap => {
+  const el = document.getElementById('fbStatus');
+  if (snap.val() === true) {
+    el.textContent = '🟢 연결됨';
+    el.className = 'fb-status status-ok';
+  } else {
+    el.textContent = '🔴 연결 끊김';
+    el.className = 'fb-status status-err';
+  }
+});
+
+/* ═══════════════════════════════════════════
+   지도
+═══════════════════════════════════════════ */
+const map = L.map('map').setView([35.8714, 128.6014], 12);
+
+const tiles = {
+  street:    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',     { attribution:'© OpenStreetMap', maxZoom:19 }),
+  satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution:'© Esri', maxZoom:19 }),
+  topo:      L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',       { attribution:'© OpenTopoMap', maxZoom:17 })
+};
+tiles.street.addTo(map);
+let currentTile = 'street';
+
+function setMapType(type) {
+  map.removeLayer(tiles[currentTile]);
+  tiles[type].addTo(map);
+  currentTile = type;
+  document.querySelectorAll('.map-type-btn').forEach((b, i) =>
+    b.classList.toggle('active', ['street','satellite','topo'][i] === type));
+}
+
+/* ═══════════════════════════════════════════
+   색상 팔레트
+═══════════════════════════════════════════ */
+const COLORS = ['#e94560','#f39c12','#2ecc71','#3498db','#9b59b6','#1abc9c','#e67e22','#e91e63','#00bcd4','#ff5722'];
+let selectedColor = COLORS[0];
+
+document.getElementById('colorRow').innerHTML = COLORS.map((c, i) =>
+  `<div class="color-swatch${i===0?' selected':''}" style="background:${c}"
+       onclick="pickColor('${c}',this)"></div>`
+).join('');
+
+function pickColor(c, el) {
+  selectedColor = c;
+  document.querySelectorAll('.color-swatch').forEach(x => x.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+/* ═══════════════════════════════════════════
+   참가자 상태
+═══════════════════════════════════════════ */
+let myName       = null;
+let myWatchId    = null;
+let countdownTimer = null;
+const markers    = {};   // { name: L.Marker }
+
+// ── 재접속 시 이전 세션 잔여 데이터 정리 ──
+const prevName = sessionStorage.getItem('myName');
+if (prevName) {
+  db.ref(`members/${prevName}`).remove();
+  sessionStorage.removeItem('myName');
+}
+
+// ── 화면 꺼졌다 켜지면 즉시 위치 갱신 ──
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && myName) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      db.ref(`members/${myName}`).update({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        updatedAt: Date.now()
+      });
+    }, null, { enableHighAccuracy: true, timeout: 10000 });
+  }
+});
+
+// ── 5분 이상 갱신 없는 참가자 자동 삭제 (내 항목만) ──
+setInterval(() => {
+  if (!myName) return;
+  db.ref(`members/${myName}/updatedAt`).once('value', snap => {
+    if (snap.val() && Date.now() - snap.val() > 10 * 60 * 1000) {
+      // 10분 이상 갱신 없으면 내 마커 삭제 후 재등록 안내
+      leaveRace();
+      showToast('⏰ 10분 이상 위치 갱신이 없어 공유가 종료됐어. 다시 등록해줘.', 5000);
+    }
+  });
+}, 60 * 1000);
+
+function createIcon(color, initial, name) {
+  // initial이 없으면 name 첫 글자로 fallback
+  const label = initial || (name ? name[0].toUpperCase() : '?');
+  const bg = color || '#888';
+  return L.divIcon({
+    className: '',
+    html: `<div class="custom-marker" style="background:${bg};width:30px;height:30px;">
+             <span>${label}</span>
+           </div>`,
+    iconSize: [30, 30],
+    iconAnchor: [15, 30],
+    popupAnchor: [0, -34]
+  });
+}
+
+/* ═══════════════════════════════════════════
+   위치 공유 시작
+═══════════════════════════════════════════ */
+function joinRace() {
+  const name = document.getElementById('nameInput').value.trim();
+  if (!name) { showToast('이름을 입력해줘'); return; }
+  if (myName) { showToast(`이미 '${myName}'로 공유 중이야`); return; }
+  if (!navigator.geolocation) { showToast('GPS를 사용할 수 없어'); return; }
+
+  // 권한 상태 먼저 확인
+  if (navigator.permissions) {
+    navigator.permissions.query({ name: 'geolocation' }).then(result => {
+      if (result.state === 'denied') {
+        showToast('⚠️ GPS 권한이 차단됨\n브라우저 주소창 왼쪽 자물쇠 아이콘 → 위치 → 허용으로 변경해줘', 5000);
+        return;
+      }
+      requestGPS(name);
+    });
+  } else {
+    requestGPS(name);
+  }
+}
+
+function requestGPS(name) {
+  showToast('📡 GPS 위치 확인 중...');
+
+  navigator.geolocation.getCurrentPosition(pos => {
+    myName = name;
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+
+    // Firebase 저장
+    db.ref(`members/${name}`).set({
+      lat, lng,
+      color: selectedColor,
+      initial: name[0].toUpperCase(),
+      updatedAt: Date.now()
+    });
+
+    // 브라우저 종료/탭 닫으면 자동 삭제
+    db.ref(`members/${name}`).onDisconnect().remove();
+
+    // 재접속 시 정리를 위해 내 이름 기억
+    sessionStorage.setItem('myName', name);
+
+    // GPS 지속 추적
+    startWatchPosition();
+
+    // 갱신 카운트다운
+    startCountdown();
+
+    // UI 업데이트
+    document.getElementById('nameInput').disabled = true;
+    document.getElementById('joinBtn').style.display = 'none';
+    document.getElementById('leaveBtn').style.display = 'block';
+    document.getElementById('myBadge').textContent = `📍 ${name} 위치 공유 중`;
+    document.getElementById('myBadge').style.display = 'block';
+
+    map.setView([lat, lng], 15);
+    showToast(`✅ ${name} 위치 공유 시작!`);
+  },
+  () => { showToast('⚠️ GPS 권한 거부됨\n주소창 왼쪽 자물쇠 → 위치 → 허용 후 다시 시도해줘', 5000); },
+  { enableHighAccuracy: true, timeout: 10000 });
+}
+
+/* ═══════════════════════════════════════════
+   GPS watchPosition
+═══════════════════════════════════════════ */
+function startWatchPosition() {
+  if (myWatchId !== null) navigator.geolocation.clearWatch(myWatchId);
+  myWatchId = navigator.geolocation.watchPosition(pos => {
+    if (!myName) return;
+    db.ref(`members/${myName}`).update({
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude,
+      updatedAt: Date.now()
+    });
+  }, null, { enableHighAccuracy: true, maximumAge: 10000 });
+}
+
+/* ═══════════════════════════════════════════
+   갱신 카운트다운 (watchPosition 보조 강제 갱신)
+═══════════════════════════════════════════ */
+function startCountdown() {
+  if (countdownTimer) clearInterval(countdownTimer);
+  let sec = parseInt(document.getElementById('refreshSec').value) || 60;
+  let remain = sec;
+
+  countdownTimer = setInterval(() => {
+    remain--;
+    document.getElementById('countdown').textContent = `다음 강제 갱신 ${remain}초 후`;
+    if (remain <= 0) {
+      remain = sec;
+      if (myName) {
+        navigator.geolocation.getCurrentPosition(pos => {
+          db.ref(`members/${myName}`).update({
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            updatedAt: Date.now()
+          });
+        }, null, { enableHighAccuracy: true });
+      }
+    }
+  }, 1000);
+}
+
+/* ═══════════════════════════════════════════
+   위치 공유 종료
+═══════════════════════════════════════════ */
+function leaveRace() {
+  if (!myName) return;
+  db.ref(`members/${myName}`).remove();
+  if (myWatchId !== null) { navigator.geolocation.clearWatch(myWatchId); myWatchId = null; }
+  if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+  document.getElementById('countdown').textContent = '';
+  document.getElementById('nameInput').disabled = false;
+  document.getElementById('joinBtn').style.display = 'block';
+  document.getElementById('leaveBtn').style.display = 'none';
+  document.getElementById('myBadge').style.display = 'none';
+  showToast(`${myName} 위치 공유 종료`);
+  sessionStorage.removeItem('myName');
+  myName = null;
+}
+
+/* ═══════════════════════════════════════════
+   Firebase 참가자 실시간 수신
+═══════════════════════════════════════════ */
+db.ref('members').on('value', snap => {
+  const data = snap.val() || {};
+
+  // 삭제된 참가자 마커 제거
+  Object.keys(markers).forEach(n => {
+    if (!data[n]) { map.removeLayer(markers[n]); delete markers[n]; }
+  });
+
+  // 추가 / 위치 업데이트
+  Object.entries(data).forEach(([name, m]) => {
+    if (markers[name]) {
+      markers[name].setLatLng([m.lat, m.lng]);
+      markers[name].setPopupContent(makePopup(name, m));
+    } else {
+      markers[name] = L.marker([m.lat, m.lng], { icon: createIcon(m.color, m.initial, name) })
+        .addTo(map)
+        .bindPopup(makePopup(name, m));
+    }
+  });
+
+  document.getElementById('memberCount').textContent = `${Object.keys(data).length}명`;
+  renderMemberList(data);
+});
+
+function makePopup(name, m) {
+  const sec = Math.round((Date.now() - m.updatedAt) / 1000);
+  const ago = sec < 60 ? `${sec}초 전` : `${Math.floor(sec/60)}분 전`;
+  return `<b style="color:${m.color}">${name}</b><br>
+          위도 ${m.lat.toFixed(5)}<br>경도 ${m.lng.toFixed(5)}<br>
+          <small>🕐 ${ago} 갱신</small>`;
+}
+
+function renderMemberList(data) {
+  const list = document.getElementById('memberList');
+  const entries = Object.entries(data);
+  if (!entries.length) { list.innerHTML = '<div class="no-members">참가자 없음</div>'; return; }
+
+  list.innerHTML = entries.map(([name, m]) => {
+    const sec  = Math.round((Date.now() - m.updatedAt) / 1000);
+    const ago  = sec < 60 ? `${sec}초 전` : `${Math.floor(sec/60)}분 전`;
+    const isMe = name === myName;
+    return `<div class="member-item" onclick="focusMember(${m.lat},${m.lng})">
+      <div class="member-dot" style="background:${m.color}"></div>
+      <div class="member-name">${name}</div>
+      ${isMe ? '<span class="member-me">나</span>' : ''}
+      <div class="member-time">${ago}</div>
+      ${isMe ? `<div class="member-remove" onclick="event.stopPropagation();leaveRace()">×</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function focusMember(lat, lng) {
+  map.setView([lat, lng], 15);
+  closeSidebar();
+}
+
+// 참가자 목록 1초마다 "n초 전" 갱신
+setInterval(() => {
+  // Firebase 리스너가 최신 data를 갖고 있으므로 last snap 재활용
+  const data = {};
+  Object.keys(markers).forEach(n => {
+    const m = markers[n];
+    if (m._firebaseData) renderMemberList(m._firebaseData);
+  });
+  // 간단히 목록 재렌더 트리거
+  const snap = { val: () => null };
+}, 5000);
+
+/* ═══════════════════════════════════════════
+   GPX 업로드 → Firebase 공유
+═══════════════════════════════════════════ */
+let gpxPolyline   = null;
+let gpxStartMark  = null;
+let gpxEndMark    = null;
+
+function uploadGPX(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const doc = new DOMParser().parseFromString(e.target.result, 'application/xml');
+    const pts = [...doc.querySelectorAll('trkpt, rtept')].map(p => ({
+      lat: parseFloat(p.getAttribute('lat')),
+      lng: parseFloat(p.getAttribute('lon'))
+    })).filter(p => !isNaN(p.lat) && !isNaN(p.lng));
+
+    if (!pts.length) { showToast('GPX에서 좌표를 찾을 수 없어'); return; }
+
+    // Firebase에 저장 → 모든 참가자에게 실시간 공유
+    db.ref('route').set({ points: pts, name: file.name, uploadedAt: Date.now() });
+    showToast(`✅ ${file.name} 공유 완료 (${pts.length}개 좌표)`);
+    document.getElementById('gpxInput').value = '';
+  };
+  reader.readAsText(file);
+}
+
+function deleteGPX() {
+  db.ref('route').remove();
+  showToast('경로 삭제됨');
+}
+
+// Firebase GPX 실시간 수신 → 모든 참가자 화면에 경로 표시
+db.ref('route').on('value', snap => {
+  // 기존 레이어 제거
+  if (gpxPolyline)  { map.removeLayer(gpxPolyline);  gpxPolyline  = null; }
+  if (gpxStartMark) { map.removeLayer(gpxStartMark); gpxStartMark = null; }
+  if (gpxEndMark)   { map.removeLayer(gpxEndMark);   gpxEndMark   = null; }
+  document.getElementById('gpxLabel').textContent = '📂 GPX 파일 업로드';
+
+  const data = snap.val();
+  if (!data || !data.points || !data.points.length) return;
+
+  const latlngs = data.points.map(p => [p.lat, p.lng]);
+  gpxPolyline = L.polyline(latlngs, { color: '#f39c12', weight: 3, opacity: .9 }).addTo(map);
+
+  const sIcon = L.divIcon({ className:'', iconSize:[16,16], iconAnchor:[8,8],
+    html:'<div style="background:#2ecc71;color:#fff;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;border:2px solid #fff">S</div>' });
+  const eIcon = L.divIcon({ className:'', iconSize:[16,16], iconAnchor:[8,8],
+    html:'<div style="background:#e94560;color:#fff;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;border:2px solid #fff">F</div>' });
+
+  gpxStartMark = L.marker(latlngs[0], { icon: sIcon }).addTo(map).bindPopup('🏁 출발');
+  gpxEndMark   = L.marker(latlngs[latlngs.length-1], { icon: eIcon }).addTo(map).bindPopup('🏆 도착');
+
+  document.getElementById('gpxLabel').textContent = `✅ ${data.name} (${data.points.length}개 좌표)`;
+  map.fitBounds(gpxPolyline.getBounds(), { padding:[30,30] });
+});
+
+/* ═══════════════════════════════════════════
+   모바일 사이드바 토글
+═══════════════════════════════════════════ */
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('overlay');
+  sb.classList.toggle('open');
+  ov.style.display = sb.classList.contains('open') ? 'block' : 'none';
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').style.display = 'none';
+}
+map.on('click', closeSidebar);
+
+/* ═══════════════════════════════════════════
+   토스트
+═══════════════════════════════════════════ */
+let toastTimer;
+function showToast(msg, duration = 2800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// iOS 핀치줌으로 인한 페이지 전체 확대 방지
+document.addEventListener('gesturestart',  e => e.preventDefault(), { passive: false });
+document.addEventListener('gesturechange', e => e.preventDefault(), { passive: false });
+document.addEventListener('gestureend',    e => e.preventDefault(), { passive: false });
+</script>
+</body>
+</html>
