@@ -154,11 +154,9 @@
     .mto-btn.active { background: #e94560; border-color: #e94560; color: #fff; }
 
     .my-loc-btn {
-      position: absolute; bottom: 36px; right: 10px; z-index: 400;
       background: rgba(22,33,62,.92); border: 1px solid #0f3460;
       color: #eee; width: 36px; height: 36px; border-radius: 8px;
       font-size: 18px; cursor: pointer; line-height: 1;
-      backdrop-filter: blur(2px);
       display: flex; align-items: center; justify-content: center;
     }
     .my-loc-btn:active { background: #0f3460; }
@@ -287,8 +285,6 @@
     <div class="mto-btn" onclick="setMapType('topo')">지형</div>
   </div>
 
-  <!-- 현재 위치 버튼 -->
-  <button class="my-loc-btn" onclick="goToMyLocation()" title="현재 위치">📍</button>
 
   <div id="map"></div>
 </div>
@@ -326,7 +322,20 @@ const tiles = {
 tiles.street.addTo(map);
 let currentTile = 'street';
 
+// 축척
 L.control.scale({ metric: true, imperial: false, position: 'bottomleft' }).addTo(map);
+
+// 현재위치 버튼 (Leaflet 커스텀 컨트롤)
+const locateCtrl = L.control({ position: 'bottomright' });
+locateCtrl.onAdd = function() {
+  const btn = L.DomUtil.create('button', 'my-loc-btn');
+  btn.innerHTML = '📍';
+  btn.title = '현재 위치';
+  L.DomEvent.disableClickPropagation(btn);
+  btn.addEventListener('click', goToMyLocation);
+  return btn;
+};
+locateCtrl.addTo(map);
 
 function setMapType(type) {
   map.removeLayer(tiles[currentTile]);
