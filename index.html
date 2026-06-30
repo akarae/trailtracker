@@ -14,7 +14,8 @@
     body {
       font-family: 'Segoe UI', sans-serif;
       background: #1a1a2e; color: #eee;
-      height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+      height: 100vh; height: 100dvh;
+      display: flex; flex-direction: column; overflow: hidden;
     }
 
     header {
@@ -154,15 +155,21 @@
     .mto-btn.active { background: #e94560; border-color: #e94560; color: #fff; }
     .mto-loc { font-size: 15px; }
 
-    /* Leaflet 축척 강제 스타일 */
-    .leaflet-control-scale-line {
-      background: rgba(22,33,62,.85) !important;
-      border: 2px solid #aaa !important;
-      border-top: none !important;
-      color: #eee !important;
-      font-size: 10px !important;
-      padding: 1px 5px !important;
-      white-space: nowrap !important;
+    /* 커스텀 축척 */
+    #customScale {
+      position: absolute; bottom: 14px; left: 10px; z-index: 400;
+      display: flex; flex-direction: column; align-items: flex-start;
+      pointer-events: none;
+    }
+    #customScaleBar {
+      height: 4px; background: #fff;
+      border: 1px solid rgba(0,0,0,.5);
+      border-top: none;
+    }
+    #customScaleLabel {
+      font-size: 10px; color: #fff;
+      text-shadow: 0 0 3px #000, 0 0 3px #000;
+      margin-top: 2px;
     }
 
     .my-badge {
@@ -222,7 +229,7 @@
 
 <header>
   <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.01</span></h1>
+  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.02</span></h1>
   <span class="badge" id="memberCount" onclick="resetMembers()">0명</span>
   <span class="fb-status status-wait" id="fbStatus">⚪ 연결 중</span>
 </header>
@@ -292,6 +299,12 @@
 
 
   <div id="map"></div>
+
+  <!-- 커스텀 축척 -->
+  <div id="customScale">
+    <div id="customScaleBar" style="width:80px"></div>
+    <div id="customScaleLabel">-</div>
+  </div>
 </div>
 
 <div id="toast"></div>
@@ -327,8 +340,29 @@ const tiles = {
 tiles.street.addTo(map);
 let currentTile = 'street';
 
-// 축척
-L.control.scale({ metric: true, imperial: false, position: 'bottomleft' }).addTo(map);
+// 커스텀 축척
+function updateScale() {
+  const zoom = map.getZoom();
+  const lat  = map.getCenter().lat;
+  const mpp  = 156543.03392 * Math.cos(lat * Math.PI / 180) / Math.pow(2, zoom);
+  const targetPx = 80;
+  const meters   = mpp * targetPx;
+
+  let label, barPx;
+  if (meters >= 1000) {
+    const km = Math.round(meters / 1000 * 10) / 10;
+    label = `${km} km`;
+    barPx = (km * 1000) / mpp;
+  } else {
+    const m = Math.round(meters / 10) * 10 || 1;
+    label = `${m} m`;
+    barPx = m / mpp;
+  }
+  document.getElementById('customScaleBar').style.width = Math.round(barPx) + 'px';
+  document.getElementById('customScaleLabel').textContent = label;
+}
+map.on('zoomend moveend', updateScale);
+updateScale();
 
 function setMapType(type) {
   map.removeLayer(tiles[currentTile]);
