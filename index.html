@@ -419,7 +419,7 @@ function startWatch() {
 
 function startCountdown() {
   if (countdownTimer) clearInterval(countdownTimer);
-  let sec = parseInt(document.getElementById('refreshSec').value) || 60;
+  let sec = parseInt(document.getElementById('refreshSec').value) || 5;
   let remain = sec;
   countdownTimer = setInterval(() => {
     remain--;
