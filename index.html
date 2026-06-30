@@ -23,7 +23,8 @@
       border-bottom: 2px solid #0f3460; flex-shrink: 0; z-index: 200;
     }
     header h1 { font-size: 15px; font-weight: 700; color: #e94560; white-space: nowrap; }
-    .badge { background: #0f3460; padding: 3px 9px; border-radius: 12px; font-size: 11px; color: #aaa; }
+    .badge { background: #0f3460; padding: 3px 9px; border-radius: 12px; font-size: 11px; color: #aaa; cursor: pointer; user-select: none; }
+    .badge:active { background: #1a4a7a; }
     .fb-status { font-size: 11px; margin-left: auto; white-space: nowrap; }
     .status-ok   { color: #2ecc71; }
     .status-err  { color: #e94560; }
@@ -186,7 +187,7 @@
 <header>
   <button class="menu-btn" onclick="toggleSidebar()">☰</button>
   <h1>🏃 Trail Tracker</h1>
-  <span class="badge" id="memberCount">0명</span>
+  <span class="badge" id="memberCount" onclick="resetMembers()">0명</span>
   <span class="fb-status status-wait" id="fbStatus">⚪ 연결 중</span>
 </header>
 
@@ -228,7 +229,7 @@
       <div class="section">
         <div class="section-title">🔄 위치 갱신 주기</div>
         <div class="refresh-row">
-          <input type="number" id="refreshSec" value="60" min="10" max="600" />
+          <input type="number" id="refreshSec" value="5" min="1" max="60" />
           <span style="font-size:12px;color:#aaa">초</span>
         </div>
         <div id="countdown"></div>
@@ -313,14 +314,36 @@ let lastData = {};
 const prevName = sessionStorage.getItem('myName');
 if (prevName) { db.ref(`members/${prevName}`).remove(); sessionStorage.removeItem('myName'); }
 
-// 화면 다시 켜지면 즉시 위치 갱신
+// 화면 다시 켜지면 Firebase에 완전 재등록
+// (화면 꺼지는 동안 onDisconnect로 삭제됐을 수 있으므로 set()으로 재등록)
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && myName) {
     navigator.geolocation.getCurrentPosition(pos => {
-      db.ref(`members/${myName}`).update({ lat: pos.coords.latitude, lng: pos.coords.longitude, updatedAt: Date.now() });
+      db.ref(`members/${myName}`).set({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        color: selectedColor,
+        initial: myName[0].toUpperCase(),
+        updatedAt: Date.now()
+      });
+      // onDisconnect도 재설정 (연결 끊기면서 해제됐을 수 있음)
+      db.ref(`members/${myName}`).onDisconnect().remove();
     }, null, { enableHighAccuracy: true, timeout: 10000 });
   }
 });
+
+// 참가자 전체 강제 리셋 (타이틀 뱃지 클릭 시 호출)
+function resetMembers() {
+  if (!confirm('참가자를 리셋하시겠습니까?\n\n현재 등록된 모든 참가자 정보가 삭제됩니다.')) return;
+  db.ref('members').remove()
+    .then(() => {
+      myName = null;
+      sessionStorage.removeItem('myName');
+      document.getElementById('myBadge').innerHTML = '';
+      alert('참가자가 리셋되었습니다.');
+    })
+    .catch(err => alert('리셋 실패: ' + err.message));
+}
 
 // 10분 이상 갱신 없으면 자동 종료
 setInterval(() => {
