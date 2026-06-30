@@ -153,6 +153,16 @@
     }
     .mto-btn.active { background: #e94560; border-color: #e94560; color: #fff; }
 
+    .my-loc-btn {
+      position: absolute; bottom: 36px; right: 10px; z-index: 400;
+      background: rgba(22,33,62,.92); border: 1px solid #0f3460;
+      color: #eee; width: 36px; height: 36px; border-radius: 8px;
+      font-size: 18px; cursor: pointer; line-height: 1;
+      backdrop-filter: blur(2px);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .my-loc-btn:active { background: #0f3460; }
+
     .my-badge {
       background: #0d2b0d; border: 1px solid #2ecc71;
       border-radius: 6px; padding: 6px 10px;
@@ -277,6 +287,9 @@
     <div class="mto-btn" onclick="setMapType('topo')">지형</div>
   </div>
 
+  <!-- 현재 위치 버튼 -->
+  <button class="my-loc-btn" onclick="goToMyLocation()" title="현재 위치">📍</button>
+
   <div id="map"></div>
 </div>
 
@@ -312,6 +325,8 @@ const tiles = {
 };
 tiles.street.addTo(map);
 let currentTile = 'street';
+
+L.control.scale({ metric: true, imperial: false, position: 'bottomleft' }).addTo(map);
 
 function setMapType(type) {
   map.removeLayer(tiles[currentTile]);
@@ -523,7 +538,21 @@ function renderList() {
   }).join('');
 }
 
-function focusMember(lat, lng) { map.setView([lat, lng], 15); closeSidebar(); }
+function focusMember(lat, lng) { map.flyTo([lat, lng], 15); closeSidebar(); }
+
+/* ── 현재 위치 이동 ── */
+let myLocMarker = null;
+function goToMyLocation() {
+  navigator.geolocation.getCurrentPosition(pos => {
+    const { latitude: lat, longitude: lng } = pos.coords;
+    if (myLocMarker) map.removeLayer(myLocMarker);
+    myLocMarker = L.circleMarker([lat, lng], {
+      radius: 8, color: '#fff', weight: 2,
+      fillColor: '#3498db', fillOpacity: 0.9
+    }).addTo(map).bindPopup('📍 현재 위치').openPopup();
+    map.flyTo([lat, lng], 15);
+  }, () => showToast('현재 위치를 가져올 수 없습니다'), { enableHighAccuracy: true, timeout: 8000 });
+}
 
 /* ── GPX ── */
 let gpxLine = null, gpxS = null, gpxE = null;
