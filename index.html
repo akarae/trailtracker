@@ -232,7 +232,7 @@
       <!-- 이름 | 색상 -->
       <div class="section">
         <div class="grid2">
-          <input type="text" id="nameInput" placeholder="이름 (최대 8자)" maxlength="8" style="margin-bottom:0" />
+          <input type="text" id="nameInput" placeholder="이름을 입력해 주세요" maxlength="8" style="margin-bottom:0" />
           <button class="color-pick-btn" id="colorPickBtn" onclick="toggleColorPopup(event)">
             <span class="color-preview" id="colorPreview" style="background:#e94560"></span>
             색상 선택
@@ -376,15 +376,15 @@ document.addEventListener('visibilitychange', () => {
 
 // 참가자 전체 강제 리셋 (타이틀 뱃지 클릭 시 호출)
 function resetMembers() {
-  if (!confirm('참가자를 리셋하시겠습니까?\n\n현재 등록된 모든 참가자 정보가 삭제됩니다.')) return;
+  if (!confirm('참가자를 초기화하시겠습니까?\n\n현재 등록된 모든 참가자 정보가 삭제됩니다.')) return;
   db.ref('members').remove()
     .then(() => {
       myName = null;
       sessionStorage.removeItem('myName');
       document.getElementById('myBadge').innerHTML = '';
-      alert('참가자가 리셋되었습니다.');
+      alert('참가자 정보가 초기화되었습니다.');
     })
-    .catch(err => alert('리셋 실패: ' + err.message));
+    .catch(err => alert('초기화 실패: ' + err.message));
 }
 
 
@@ -400,14 +400,14 @@ function createIcon(color, initial, name) {
 /* ── 위치 공유 시작 ── */
 function joinRace() {
   const name = document.getElementById('nameInput').value.trim();
-  if (!name) { showToast('이름을 입력해줘'); return; }
-  if (myName) { showToast(`이미 '${myName}'로 공유 중이야`); return; }
-  if (!navigator.geolocation) { showToast('GPS를 사용할 수 없어'); return; }
+  if (!name) { showToast('이름을 입력해 주세요'); return; }
+  if (myName) { showToast(`이미 '${myName}'로 공유 중입니다`); return; }
+  if (!navigator.geolocation) { showToast('GPS를 사용할 수 없습니다'); return; }
 
   if (navigator.permissions) {
     navigator.permissions.query({ name: 'geolocation' }).then(r => {
       if (r.state === 'denied') {
-        showToast('⚠️ GPS 차단됨\n주소창 자물쇠 → 위치 → 허용 후 다시 시도해줘', 5000);
+        showToast('⚠️ GPS가 차단되어 있습니다\n주소창 자물쇠 → 위치 → 허용 후 다시 시도해 주세요', 5000);
         return;
       }
       requestGPS(name);
@@ -418,7 +418,7 @@ function joinRace() {
 }
 
 function requestGPS(name) {
-  showToast('📡 GPS 위치 확인 중...');
+  showToast('📡 GPS 위치 확인 중입니다...');
   navigator.geolocation.getCurrentPosition(pos => {
     myName = name;
     sessionStorage.setItem('myName', name);
@@ -435,9 +435,9 @@ function requestGPS(name) {
     document.getElementById('myBadge').textContent = `📍 ${name} 위치 공유 중`;
     document.getElementById('myBadge').style.display = 'block';
     map.setView([pos.coords.latitude, pos.coords.longitude], 15);
-    showToast(`✅ ${name} 위치 공유 시작!`);
+    showToast(`✅ ${name} 위치 공유가 시작되었습니다`);
   },
-  () => { showToast('⚠️ GPS 권한 거부됨\n주소창 자물쇠 → 위치 → 허용 후 다시 시도해줘', 5000); },
+  () => { showToast('⚠️ GPS 권한이 거부되었습니다\n주소창 자물쇠 → 위치 → 허용 후 다시 시도해 주세요', 5000); },
   { enableHighAccuracy: true, timeout: 10000 });
 }
 
@@ -476,7 +476,7 @@ function leaveRace() {
   document.getElementById('leaveBtn').style.display = 'none';
   document.getElementById('myBadge').style.display = 'none';
   sessionStorage.removeItem('myName');
-  showToast(`${myName} 위치 공유 종료`);
+  showToast(`${myName} 위치 공유가 종료되었습니다`);
   myName = null;
 }
 
@@ -536,7 +536,7 @@ function uploadGPX(event) {
     const pts = [...doc.querySelectorAll('trkpt,rtept')].map(p => ({
       lat: parseFloat(p.getAttribute('lat')), lng: parseFloat(p.getAttribute('lon'))
     })).filter(p => !isNaN(p.lat));
-    if (!pts.length) { showToast('GPX 좌표를 찾을 수 없어'); return; }
+    if (!pts.length) { showToast('GPX 좌표를 찾을 수 없습니다'); return; }
     db.ref('route').set({ points: pts, name: file.name, uploadedAt: Date.now() });
     showToast(`✅ ${file.name} 공유 완료 (${pts.length}개 좌표)`);
     document.getElementById('gpxInput').value = '';
@@ -544,7 +544,7 @@ function uploadGPX(event) {
   reader.readAsText(file);
 }
 
-function deleteGPX() { db.ref('route').remove(); showToast('경로 삭제됨'); }
+function deleteGPX() { db.ref('route').remove(); showToast('경로가 삭제되었습니다'); }
 
 function setGpxUI(hasRoute) {
   document.getElementById('gpxLabel').style.display    = hasRoute ? 'none'  : 'flex';
