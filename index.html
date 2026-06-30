@@ -116,15 +116,6 @@
       width: 14px; height: 14px; border-radius: 50%;
       flex-shrink: 0; border: 2px solid rgba(255,255,255,.4);
     }
-    .color-popup {
-      display: none; position: absolute;
-      top: calc(100% + 4px); right: 0; z-index: 600;
-      background: #16213e; border: 1px solid #1a4a8a;
-      border-radius: 8px; padding: 10px;
-      box-shadow: 0 4px 20px rgba(0,0,0,.7);
-      min-width: 160px;
-    }
-    .color-popup.open { display: block; }
     .color-row { display: flex; gap: 6px; flex-wrap: wrap; }
     .color-swatch {
       width: 26px; height: 26px; border-radius: 50%;
@@ -242,16 +233,13 @@
       <div class="section">
         <div class="grid2">
           <input type="text" id="nameInput" placeholder="이름 (최대 8자)" maxlength="8" style="margin-bottom:0" />
-          <div style="position:relative">
-            <button class="color-pick-btn" id="colorPickBtn" onclick="toggleColorPopup(event)">
-              <span class="color-preview" id="colorPreview" style="background:#e94560"></span>
-              색상 선택
-            </button>
-            <div id="colorPopup" class="color-popup">
-              <div class="color-row" id="colorRow"></div>
-            </div>
-          </div>
+          <button class="color-pick-btn" id="colorPickBtn" onclick="toggleColorPopup(event)">
+            <span class="color-preview" id="colorPreview" style="background:#e94560"></span>
+            색상 선택
+          </button>
         </div>
+        <!-- 색상 스와치: 버튼 클릭 시 인라인으로 펼쳐짐 -->
+        <div class="color-row" id="colorRow" style="display:none; margin-top:8px; padding-top:8px; border-top:1px solid #0f3460;"></div>
         <div class="my-badge" id="myBadge"></div>
       </div>
 
@@ -333,13 +321,14 @@ function setMapType(type) {
     b.classList.toggle('active', ['street','satellite','topo'][i] === type));
 }
 
-/* ── 색상 팝업 ── */
+/* ── 색상 선택 토글 ── */
 function toggleColorPopup(e) {
   e.stopPropagation();
-  document.getElementById('colorPopup').classList.toggle('open');
+  const row = document.getElementById('colorRow');
+  row.style.display = row.style.display === 'none' ? 'flex' : 'none';
 }
 document.addEventListener('click', () => {
-  document.getElementById('colorPopup')?.classList.remove('open');
+  document.getElementById('colorRow').style.display = 'none';
 });
 
 /* ── 색상 ── */
@@ -355,7 +344,7 @@ function pickColor(c, el) {
   document.querySelectorAll('.color-swatch').forEach(x => x.classList.remove('selected'));
   el.classList.add('selected');
   document.getElementById('colorPreview').style.background = c;
-  document.getElementById('colorPopup').classList.remove('open');
+  document.getElementById('colorRow').style.display = 'none';
 }
 
 /* ── 참가자 상태 ── */
