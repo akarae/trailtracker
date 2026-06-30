@@ -227,27 +227,21 @@
 
     <div class="sidebar-top">
 
-      <!-- GPX 업로드 | 경로 삭제 -->
+      <!-- GPX: 배타적 표시 -->
       <div class="section">
-        <div class="grid2">
-          <label for="gpxInput" class="file-btn" id="gpxLabel">📂 GPX 업로드</label>
-          <button class="btn btn-secondary" style="margin-top:0" onclick="deleteGPX()">🗑 경로 삭제</button>
-        </div>
+        <label for="gpxInput" class="file-btn" id="gpxLabel">📂 GPX 파일 업로드</label>
+        <button class="btn btn-secondary" id="deleteGpxBtn" style="display:none;margin-top:0" onclick="deleteGPX()">🗑 경로 삭제</button>
         <input type="file" id="gpxInput" accept=".gpx" onchange="uploadGPX(event)" />
       </div>
 
       <!-- 이름 | 색상 -->
       <div class="section">
         <div class="grid2">
-          <div>
-            <label>이름</label>
-            <input type="text" id="nameInput" placeholder="최대 8자" maxlength="8" style="margin-bottom:0" />
-          </div>
+          <input type="text" id="nameInput" placeholder="이름 (최대 8자)" maxlength="8" style="margin-bottom:0" />
           <div style="position:relative">
-            <label>색상</label>
             <button class="color-pick-btn" id="colorPickBtn" onclick="toggleColorPopup(event)">
               <span class="color-preview" id="colorPreview" style="background:#e94560"></span>
-              선택
+              색상 선택
             </button>
             <div id="colorPopup" class="color-popup">
               <div class="color-row" id="colorRow"></div>
@@ -257,22 +251,19 @@
         <div class="my-badge" id="myBadge"></div>
       </div>
 
-      <!-- 위치 공유 시작 | 갱신 주기 -->
+      <!-- 공유 시작 | 갱신 주기 -->
       <div class="section">
-        <div class="grid2" style="align-items:end">
+        <div class="grid2" style="align-items:center">
           <div>
             <button class="btn btn-primary" id="joinBtn" onclick="joinRace()" style="margin-top:0">📌 공유 시작</button>
             <button class="btn btn-red" id="leaveBtn" onclick="leaveRace()" style="display:none;margin-top:0">⛔ 공유 종료</button>
           </div>
-          <div>
-            <label>갱신 주기</label>
-            <div class="refresh-row">
-              <input type="number" id="refreshSec" value="5" min="1" max="60" style="margin-bottom:0" />
-              <span style="font-size:11px;color:#aaa;white-space:nowrap">초</span>
-            </div>
-            <div id="countdown" style="font-size:10px;color:#f39c12;margin-top:3px;min-height:14px"></div>
+          <div class="refresh-row" style="justify-content:flex-end">
+            <input type="number" id="refreshSec" value="5" min="1" max="60" style="margin-bottom:0;width:60px;flex:none;text-align:center" />
+            <span style="font-size:11px;color:#aaa;white-space:nowrap">초</span>
           </div>
         </div>
+        <div id="countdown" style="font-size:10px;color:#f39c12;margin-top:4px;min-height:14px;text-align:right"></div>
       </div>
 
     </div><!-- /sidebar-top -->
@@ -572,19 +563,23 @@ function uploadGPX(event) {
 
 function deleteGPX() { db.ref('route').remove(); showToast('경로 삭제됨'); }
 
+function setGpxUI(hasRoute) {
+  document.getElementById('gpxLabel').style.display    = hasRoute ? 'none'  : 'flex';
+  document.getElementById('deleteGpxBtn').style.display = hasRoute ? 'block' : 'none';
+}
+
 db.ref('route').on('value', snap => {
   if (gpxLine) { map.removeLayer(gpxLine); gpxLine = null; }
   if (gpxS)    { map.removeLayer(gpxS);    gpxS = null; }
   if (gpxE)    { map.removeLayer(gpxE);    gpxE = null; }
-  document.getElementById('gpxLabel').textContent = '📂 GPX 파일 업로드';
   const data = snap.val();
-  if (!data?.points?.length) return;
+  if (!data?.points?.length) { setGpxUI(false); return; }
   const ll = data.points.map(p => [p.lat, p.lng]);
   gpxLine = L.polyline(ll, { color:'#f39c12', weight:3, opacity:.9 }).addTo(map);
   const mk = html => L.divIcon({ className:'', iconSize:[16,16], iconAnchor:[8,8], html });
   gpxS = L.marker(ll[0], { icon: mk('<div style="background:#2ecc71;color:#fff;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;border:2px solid #fff">S</div>') }).addTo(map).bindPopup('🏁 출발');
   gpxE = L.marker(ll[ll.length-1], { icon: mk('<div style="background:#e94560;color:#fff;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;border:2px solid #fff">F</div>') }).addTo(map).bindPopup('🏆 도착');
-  document.getElementById('gpxLabel').textContent = `✅ ${data.name} (${data.points.length}개 좌표)`;
+  setGpxUI(true);
   map.fitBounds(gpxLine.getBounds(), { padding:[30,30] });
 });
 
