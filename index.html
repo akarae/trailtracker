@@ -360,7 +360,7 @@ const COLORS = ['#e94560','#f39c12','#2ecc71','#3498db','#9b59b6','#1abc9c','#e6
 let selectedColor = COLORS[0];
 
 document.getElementById('colorRow').innerHTML = COLORS.map((c,i) =>
-  `<div class="color-swatch${i===0?' selected':''}" style="background:${c}" onclick="pickColor('${c}',this)"></div>`
+  `<div class="color-swatch${i===0?' selected':''}" style="background:${c}" data-color="${c}" onclick="pickColor('${c}',this)"></div>`
 ).join('');
 
 function pickColor(c, el) {
@@ -376,9 +376,26 @@ let myName = null, myWatchId = null, countdownTimer = null;
 const markers = {};
 let lastData = {};
 
-// 재접속 시 이전 세션 잔여 데이터 정리
-const prevName = sessionStorage.getItem('myName');
-if (prevName) { db.ref(`members/${prevName}`).remove(); sessionStorage.removeItem('myName'); }
+// 페이지 로드 시 localStorage에 세션 정보가 있으면 자동 재연결
+window.addEventListener('load', () => {
+  const savedName  = localStorage.getItem('trackerName');
+  const savedColor = localStorage.getItem('trackerColor');
+  if (!savedName) return;
+
+  // 색상 복원
+  if (savedColor) {
+    selectedColor = savedColor;
+    document.getElementById('colorPreview').style.background = savedColor;
+    document.querySelectorAll('.color-swatch').forEach(s => {
+      s.classList.toggle('selected', s.dataset.color === savedColor);
+    });
+  }
+
+  // 이름 복원 후 자동 재연결
+  document.getElementById('nameInput').value = savedName;
+  showToast(`🔄 ${savedName} 세션을 복원 중입니다...`);
+  requestGPS(savedName);
+});
 
 // 화면 다시 켜지면 Firebase에 완전 재등록
 // (화면 꺼지는 동안 onDisconnect로 삭제됐을 수 있으므로 set()으로 재등록)
@@ -404,7 +421,8 @@ function resetMembers() {
   db.ref('members').remove()
     .then(() => {
       myName = null;
-      sessionStorage.removeItem('myName');
+      localStorage.removeItem('trackerName');
+      localStorage.removeItem('trackerColor');
       document.getElementById('myBadge').innerHTML = '';
       alert('참가자 정보가 초기화되었습니다.');
     })
@@ -445,7 +463,8 @@ function requestGPS(name) {
   showToast('📡 GPS 위치 확인 중입니다...');
   navigator.geolocation.getCurrentPosition(pos => {
     myName = name;
-    sessionStorage.setItem('myName', name);
+    localStorage.setItem('trackerName', name);
+    localStorage.setItem('trackerColor', selectedColor);
     db.ref(`members/${name}`).set({
       lat: pos.coords.latitude, lng: pos.coords.longitude,
       color: selectedColor, initial: name[0].toUpperCase(), updatedAt: Date.now()
@@ -499,7 +518,8 @@ function leaveRace() {
   document.getElementById('joinBtn').style.display = 'block';
   document.getElementById('leaveBtn').style.display = 'none';
   document.getElementById('myBadge').style.display = 'none';
-  sessionStorage.removeItem('myName');
+  localStorage.removeItem('trackerName');
+  localStorage.removeItem('trackerColor');
   showToast(`${myName} 위치 공유가 종료되었습니다`);
   myName = null;
 }
