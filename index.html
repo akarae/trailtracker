@@ -83,6 +83,7 @@
     .overlay {
       display: none; position: absolute; inset: 0;
       background: rgba(0,0,0,.5); z-index: 140;
+      pointer-events: none;
     }
 
     .section { padding: 12px 12px 10px; border-bottom: 1px solid #0f3460; }
@@ -506,12 +507,21 @@ db.ref('route').on('value', snap => {
 /* ── 사이드바 ── */
 function toggleSidebar() {
   const sb = document.getElementById('sidebar'), ov = document.getElementById('overlay');
-  sb.classList.toggle('open');
-  ov.style.display = sb.classList.contains('open') ? 'block' : 'none';
+  const isOpen = sb.classList.toggle('open');
+  if (isOpen) {
+    ov.style.display = 'block';
+    ov.style.pointerEvents = 'auto';
+  } else {
+    closeSidebar();
+  }
 }
 function closeSidebar() {
   document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('overlay').style.display = 'none';
+  const ov = document.getElementById('overlay');
+  ov.style.display = 'none';
+  ov.style.pointerEvents = 'none';
+  // 사이드바 닫힌 후 지도 터치/크기 재활성화
+  setTimeout(() => map.invalidateSize(), 300);
 }
 map.on('click', closeSidebar);
 
