@@ -102,7 +102,30 @@
     input:focus { border-color: #e94560; }
     input:disabled { opacity: .5; }
 
-    .color-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    /* 2열 그리드 */
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+    /* 색상 선택 버튼 + 팝업 */
+    .color-pick-btn {
+      width: 100%; padding: 7px 8px; border: 1px solid #1a4a8a;
+      border-radius: 6px; background: #0f3460; color: #eee;
+      font-size: 12px; cursor: pointer; text-align: left;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .color-preview {
+      width: 14px; height: 14px; border-radius: 50%;
+      flex-shrink: 0; border: 2px solid rgba(255,255,255,.4);
+    }
+    .color-popup {
+      display: none; position: absolute;
+      top: calc(100% + 4px); right: 0; z-index: 600;
+      background: #16213e; border: 1px solid #1a4a8a;
+      border-radius: 8px; padding: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.7);
+      min-width: 160px;
+    }
+    .color-popup.open { display: block; }
+    .color-row { display: flex; gap: 6px; flex-wrap: wrap; }
     .color-swatch {
       width: 26px; height: 26px; border-radius: 50%;
       cursor: pointer; border: 3px solid transparent; transition: transform .15s;
@@ -117,29 +140,35 @@
     .btn-red       { background: #c0392b; color: #fff; }
 
     .file-btn {
-      display: block; width: 100%; padding: 8px;
+      display: flex; align-items: center; justify-content: center;
+      width: 100%; padding: 8px 4px;
       background: #0f3460; border: 1px dashed #1a4a8a;
-      border-radius: 6px; color: #aaa; font-size: 12px;
-      text-align: center; cursor: pointer; margin-bottom: 6px;
+      border-radius: 6px; color: #aaa; font-size: 11px;
+      text-align: center; cursor: pointer;
     }
     .file-btn:hover { border-color: #e94560; color: #e94560; }
     #gpxInput { display: none; }
 
-    .map-type-row { display: flex; gap: 5px; margin-bottom: 8px; }
-    .map-type-btn {
-      flex: 1; padding: 6px; border: 1px solid #1a4a8a;
-      border-radius: 6px; background: #0f3460; color: #aaa;
-      font-size: 11px; cursor: pointer; text-align: center;
+    /* 지도 위 타입 오버레이 */
+    .map-type-overlay {
+      position: absolute; top: 10px; right: 10px; z-index: 400;
+      display: flex; gap: 4px;
     }
-    .map-type-btn.active { background: #e94560; border-color: #e94560; color: #fff; }
+    .mto-btn {
+      background: rgba(22,33,62,.92); border: 1px solid #0f3460;
+      color: #aaa; padding: 5px 10px; border-radius: 6px;
+      font-size: 11px; font-weight: 600; cursor: pointer;
+      backdrop-filter: blur(2px);
+    }
+    .mto-btn.active { background: #e94560; border-color: #e94560; color: #fff; }
 
     .my-badge {
       background: #0d2b0d; border: 1px solid #2ecc71;
       border-radius: 6px; padding: 6px 10px;
-      font-size: 11px; color: #2ecc71; margin-bottom: 6px; display: none;
+      font-size: 11px; color: #2ecc71; margin-top: 6px; display: none;
     }
 
-    .refresh-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+    .refresh-row { display: flex; gap: 4px; align-items: center; }
     .refresh-row input { margin-bottom: 0; flex: 1; }
     #countdown { font-size: 11px; color: #f39c12; margin-top: 2px; min-height: 16px; }
 
@@ -196,48 +225,59 @@
 
   <div class="sidebar" id="sidebar">
 
-    <!-- 스크롤 되는 상단 영역 -->
     <div class="sidebar-top">
 
+      <!-- GPX 업로드 | 경로 삭제 -->
       <div class="section">
-        <div class="section-title">🗺 지도 타입</div>
-        <div class="map-type-row">
-          <div class="map-type-btn active" onclick="setMapType('street')">일반</div>
-          <div class="map-type-btn" onclick="setMapType('satellite')">위성</div>
-          <div class="map-type-btn" onclick="setMapType('topo')">지형</div>
+        <div class="grid2">
+          <label for="gpxInput" class="file-btn" id="gpxLabel">📂 GPX 업로드</label>
+          <button class="btn btn-secondary" style="margin-top:0" onclick="deleteGPX()">🗑 경로 삭제</button>
         </div>
-      </div>
-
-      <div class="section">
-        <div class="section-title">📍 경로 (모두에게 공유)</div>
-        <label for="gpxInput" class="file-btn" id="gpxLabel">📂 GPX 파일 업로드</label>
         <input type="file" id="gpxInput" accept=".gpx" onchange="uploadGPX(event)" />
-        <button class="btn btn-secondary" onclick="deleteGPX()">경로 삭제</button>
       </div>
 
+      <!-- 이름 | 색상 -->
       <div class="section">
-        <div class="section-title">👤 내 위치 등록</div>
-        <div class="my-badge" id="myBadge"></div>
-        <label>이름</label>
-        <input type="text" id="nameInput" placeholder="이름 입력 (최대 8자)" maxlength="8" />
-        <label>색상 선택</label>
-        <div class="color-row" id="colorRow"></div>
-        <button class="btn btn-primary" id="joinBtn" onclick="joinRace()">📌 위치 공유 시작</button>
-        <button class="btn btn-red" id="leaveBtn" onclick="leaveRace()" style="display:none">⛔ 위치 공유 종료</button>
-      </div>
-
-      <div class="section">
-        <div class="section-title">🔄 위치 갱신 주기</div>
-        <div class="refresh-row">
-          <input type="number" id="refreshSec" value="5" min="1" max="60" />
-          <span style="font-size:12px;color:#aaa">초</span>
+        <div class="grid2">
+          <div>
+            <label>이름</label>
+            <input type="text" id="nameInput" placeholder="최대 8자" maxlength="8" style="margin-bottom:0" />
+          </div>
+          <div style="position:relative">
+            <label>색상</label>
+            <button class="color-pick-btn" id="colorPickBtn" onclick="toggleColorPopup(event)">
+              <span class="color-preview" id="colorPreview" style="background:#e94560"></span>
+              선택
+            </button>
+            <div id="colorPopup" class="color-popup">
+              <div class="color-row" id="colorRow"></div>
+            </div>
+          </div>
         </div>
-        <div id="countdown"></div>
+        <div class="my-badge" id="myBadge"></div>
+      </div>
+
+      <!-- 위치 공유 시작 | 갱신 주기 -->
+      <div class="section">
+        <div class="grid2" style="align-items:end">
+          <div>
+            <button class="btn btn-primary" id="joinBtn" onclick="joinRace()" style="margin-top:0">📌 공유 시작</button>
+            <button class="btn btn-red" id="leaveBtn" onclick="leaveRace()" style="display:none;margin-top:0">⛔ 공유 종료</button>
+          </div>
+          <div>
+            <label>갱신 주기</label>
+            <div class="refresh-row">
+              <input type="number" id="refreshSec" value="5" min="1" max="60" style="margin-bottom:0" />
+              <span style="font-size:11px;color:#aaa;white-space:nowrap">초</span>
+            </div>
+            <div id="countdown" style="font-size:10px;color:#f39c12;margin-top:3px;min-height:14px"></div>
+          </div>
+        </div>
       </div>
 
     </div><!-- /sidebar-top -->
 
-    <!-- 참가자 목록 — 독립 스크롤 -->
+    <!-- 참가자 목록 -->
     <div class="sidebar-members">
       <div class="section-title">🏅 참가자 목록</div>
       <div class="member-list" id="memberList">
@@ -246,6 +286,13 @@
     </div>
 
   </div><!-- /sidebar -->
+
+  <!-- 지도 위 타입 버튼 -->
+  <div class="map-type-overlay">
+    <div class="mto-btn active" onclick="setMapType('street')">일반</div>
+    <div class="mto-btn" onclick="setMapType('satellite')">위성</div>
+    <div class="mto-btn" onclick="setMapType('topo')">지형</div>
+  </div>
 
   <div id="map"></div>
 </div>
@@ -287,9 +334,18 @@ function setMapType(type) {
   map.removeLayer(tiles[currentTile]);
   tiles[type].addTo(map);
   currentTile = type;
-  document.querySelectorAll('.map-type-btn').forEach((b,i) =>
+  document.querySelectorAll('.mto-btn').forEach((b,i) =>
     b.classList.toggle('active', ['street','satellite','topo'][i] === type));
 }
+
+/* ── 색상 팝업 ── */
+function toggleColorPopup(e) {
+  e.stopPropagation();
+  document.getElementById('colorPopup').classList.toggle('open');
+}
+document.addEventListener('click', () => {
+  document.getElementById('colorPopup')?.classList.remove('open');
+});
 
 /* ── 색상 ── */
 const COLORS = ['#e94560','#f39c12','#2ecc71','#3498db','#9b59b6','#1abc9c','#e67e22','#e91e63','#00bcd4','#ff5722'];
@@ -303,6 +359,8 @@ function pickColor(c, el) {
   selectedColor = c;
   document.querySelectorAll('.color-swatch').forEach(x => x.classList.remove('selected'));
   el.classList.add('selected');
+  document.getElementById('colorPreview').style.background = c;
+  document.getElementById('colorPopup').classList.remove('open');
 }
 
 /* ── 참가자 상태 ── */
