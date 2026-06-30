@@ -387,16 +387,6 @@ function resetMembers() {
     .catch(err => alert('리셋 실패: ' + err.message));
 }
 
-// 10분 이상 갱신 없으면 자동 종료
-setInterval(() => {
-  if (!myName) return;
-  db.ref(`members/${myName}/updatedAt`).once('value', snap => {
-    if (snap.val() && Date.now() - snap.val() > 10 * 60 * 1000) {
-      leaveRace();
-      showToast('⏰ 10분간 위치 갱신이 없어 공유 종료됨. 다시 등록해줘.', 5000);
-    }
-  });
-}, 60000);
 
 function createIcon(color, initial, name) {
   const label = initial || (name ? name[0].toUpperCase() : '?');
