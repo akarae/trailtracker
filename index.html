@@ -230,7 +230,7 @@
 
 <header>
   <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.08</span></h1>
+  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.09</span></h1>
   <span class="badge" id="memberCount" onclick="resetMembers()">0명</span>
   <span class="fb-status status-wait" id="fbStatus">⚪ 연결 중</span>
 </header>
@@ -456,7 +456,7 @@ document.addEventListener('visibilitychange', () => {
 function resetMembers() {
   if (!confirm('참가자를 초기화하시겠습니까?\n\n현재 등록된 모든 참가자 정보가 삭제됩니다.')) return;
   // 내 공유 상태 먼저 정리 (GPS, 타이머, UI, localStorage 모두 처리)
-  if (myName) leaveRace();
+  if (myName) leaveRace(true);
   // Firebase 전체 삭제
   db.ref('members').remove()
     .then(() => alert('참가자 정보가 초기화되었습니다.'))
@@ -548,7 +548,7 @@ function startCountdown() {
   }, 1000);
 }
 
-function leaveRace() {
+function leaveRace(silent = false) {
   if (!myName) return;
   db.ref(`members/${myUUID}`).remove();
   if (myWatchId !== null) { navigator.geolocation.clearWatch(myWatchId); myWatchId = null; }
@@ -560,7 +560,7 @@ function leaveRace() {
   document.getElementById('myBadge').style.display = 'none';
   localStorage.removeItem('trackerName');
   localStorage.removeItem('trackerColor');
-  showToast(`${myName} 위치 공유가 종료되었습니다`);
+  if (!silent) showToast(`${myName} 위치 공유가 종료되었습니다`);
   myName = null;
 }
 
@@ -589,7 +589,7 @@ setInterval(renderList, 5000);
 // 내 노드가 외부(참가자 초기화 등)에 의해 삭제되면 자동으로 공유 종료
 db.ref(`members/${myUUID}`).on('value', snap => {
   if (!snap.val() && myName) {
-    leaveRace();
+    leaveRace(true);
     showToast('⚠️ 참가자가 초기화되어 위치 공유가 종료되었습니다.', 4000);
   }
 });
