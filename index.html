@@ -230,7 +230,7 @@
 
 <header>
   <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.06</span></h1>
+  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.07</span></h1>
   <span class="badge" id="memberCount" onclick="resetMembers()">0명</span>
   <span class="fb-status status-wait" id="fbStatus">⚪ 연결 중</span>
 </header>
@@ -455,15 +455,11 @@ document.addEventListener('visibilitychange', () => {
 // 참가자 전체 강제 리셋 (타이틀 뱃지 클릭 시 호출)
 function resetMembers() {
   if (!confirm('참가자를 초기화하시겠습니까?\n\n현재 등록된 모든 참가자 정보가 삭제됩니다.')) return;
+  // 내 공유 상태 먼저 정리 (GPS, 타이머, UI, localStorage 모두 처리)
+  if (myName) leaveRace();
+  // Firebase 전체 삭제
   db.ref('members').remove()
-    .then(() => {
-      myName = null;
-      localStorage.removeItem('trackerName');
-      localStorage.removeItem('trackerColor');
-      // UUID는 유지 (기기 식별자이므로 초기화해도 동일 기기면 재발급됨)
-      document.getElementById('myBadge').innerHTML = '';
-      alert('참가자 정보가 초기화되었습니다.');
-    })
+    .then(() => alert('참가자 정보가 초기화되었습니다.'))
     .catch(err => alert('초기화 실패: ' + err.message));
 }
 
