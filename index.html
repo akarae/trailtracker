@@ -232,7 +232,7 @@
 
 <header>
   <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.10</span></h1>
+  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.12</span></h1>
   <span class="badge" id="memberCount" onclick="resetMembers()">0명</span>
   <span class="fb-status status-wait" id="fbStatus">⚪ 연결 중</span>
 </header>
@@ -273,7 +273,7 @@
             <button class="btn btn-red" id="leaveBtn" onclick="leaveRace()" style="display:none;margin-top:0">⛔ 공유 종료</button>
           </div>
           <div class="refresh-row" style="justify-content:flex-end">
-            <input type="number" id="refreshSec" value="5" min="1" max="60" style="margin-bottom:0;width:60px;flex:none;text-align:center" />
+            <input type="number" id="refreshSec" value="3" min="1" max="60" style="margin-bottom:0;width:60px;flex:none;text-align:center" />
             <span style="font-size:11px;color:#aaa;white-space:nowrap">초</span>
           </div>
         </div>
@@ -386,7 +386,16 @@ document.addEventListener('click', () => {
 });
 
 /* ── 색상 ── */
-const COLORS = ['#e94560','#f39c12','#2ecc71','#3498db','#9b59b6','#1abc9c','#e67e22','#e91e63','#00bcd4','#ff5722'];
+const COLORS = [
+  '#ff1744', '#c62828',  // 빨
+  '#ff9100', '#e65100',  // 주
+  '#ffea00', '#f57f17',  // 노
+  '#00e676', '#4caf50',  // 초
+  '#448aff', '#2196f3',  // 파
+  '#7986cb', '#5c6bc0',  // 남
+  '#ab47bc', '#9c27b0',  // 보
+  '#90a4ae', '#607d8b'   // 검
+];
 let selectedColor = COLORS[0];
 
 document.getElementById('colorRow').innerHTML = COLORS.map((c,i) =>
@@ -514,7 +523,7 @@ function requestGPS(name) {
     document.getElementById('myBadge').textContent = `📍 ${name} 위치 공유 중`;
     document.getElementById('myBadge').style.display = 'block';
     map.setView([pos.coords.latitude, pos.coords.longitude], 15);
-    showToast(`✅ 위치 공유가 시작되었습니다`);
+    showToast('✅ 위치 공유가 시작되었습니다');
   },
   () => { showToast('⚠️ GPS 권한이 거부되었습니다\n주소창 자물쇠 → 위치 → 허용 후 다시 시도해 주세요', 5000); },
   { enableHighAccuracy: true, timeout: 10000 });
@@ -562,7 +571,7 @@ function leaveRace(silent = false) {
   document.getElementById('myBadge').style.display = 'none';
   localStorage.removeItem('trackerName');
   localStorage.removeItem('trackerColor');
-  if (!silent) showToast(`위치 공유가 종료되었습니다`);
+  if (!silent) showToast('위치 공유가 종료되었습니다');
   myName = null;
 }
 
