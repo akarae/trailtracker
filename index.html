@@ -91,6 +91,8 @@
       background: rgba(0,0,0,.5); z-index: 140;
       pointer-events: none;
     }
+    /* 사이드바 열릴 때 지도 버튼 레이어를 사이드바 뒤로 */
+    body.sidebar-open .map-type-overlay { z-index: 100; }
 
     .section { padding: 12px 12px 10px; border-bottom: 1px solid #0f3460; }
     .section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #e94560; margin-bottom: 8px; font-weight: 700; }
@@ -230,7 +232,7 @@
 
 <header>
   <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.09</span></h1>
+  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.10</span></h1>
   <span class="badge" id="memberCount" onclick="resetMembers()">0명</span>
   <span class="fb-status status-wait" id="fbStatus">⚪ 연결 중</span>
 </header>
@@ -512,7 +514,7 @@ function requestGPS(name) {
     document.getElementById('myBadge').textContent = `📍 ${name} 위치 공유 중`;
     document.getElementById('myBadge').style.display = 'block';
     map.setView([pos.coords.latitude, pos.coords.longitude], 15);
-    showToast(`✅ ${name} 위치 공유가 시작되었습니다`);
+    showToast(`✅ 위치 공유가 시작되었습니다`);
   },
   () => { showToast('⚠️ GPS 권한이 거부되었습니다\n주소창 자물쇠 → 위치 → 허용 후 다시 시도해 주세요', 5000); },
   { enableHighAccuracy: true, timeout: 10000 });
@@ -560,7 +562,7 @@ function leaveRace(silent = false) {
   document.getElementById('myBadge').style.display = 'none';
   localStorage.removeItem('trackerName');
   localStorage.removeItem('trackerColor');
-  if (!silent) showToast(`${myName} 위치 공유가 종료되었습니다`);
+  if (!silent) showToast(`위치 공유가 종료되었습니다`);
   myName = null;
 }
 
@@ -683,12 +685,14 @@ function toggleSidebar() {
   if (isOpen) {
     ov.style.display = 'block';
     ov.style.pointerEvents = 'auto';
+    document.body.classList.add('sidebar-open');
   } else {
     closeSidebar();
   }
 }
 function closeSidebar() {
   document.getElementById('sidebar').classList.remove('open');
+  document.body.classList.remove('sidebar-open');
   const ov = document.getElementById('overlay');
   ov.style.display = 'none';
   ov.style.pointerEvents = 'none';
