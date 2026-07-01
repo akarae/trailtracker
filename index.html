@@ -230,7 +230,7 @@
 
 <header>
   <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.07</span></h1>
+  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.08</span></h1>
   <span class="badge" id="memberCount" onclick="resetMembers()">0명</span>
   <span class="fb-status status-wait" id="fbStatus">⚪ 연결 중</span>
 </header>
@@ -522,7 +522,10 @@ function startWatch() {
   if (myWatchId !== null) navigator.geolocation.clearWatch(myWatchId);
   myWatchId = navigator.geolocation.watchPosition(pos => {
     if (!myName) return;
-    db.ref(`members/${myUUID}`).update({ lat: pos.coords.latitude, lng: pos.coords.longitude, updatedAt: Date.now() });
+    db.ref(`members/${myUUID}`).set({
+      name: myName, lat: pos.coords.latitude, lng: pos.coords.longitude,
+      color: selectedColor, initial: myName[0].toUpperCase(), updatedAt: Date.now()
+    });
   }, null, { enableHighAccuracy: true, maximumAge: 10000 });
 }
 
@@ -536,7 +539,10 @@ function startCountdown() {
     if (remain <= 0) {
       remain = sec;
       if (myName) navigator.geolocation.getCurrentPosition(pos => {
-        db.ref(`members/${myUUID}`).update({ lat: pos.coords.latitude, lng: pos.coords.longitude, updatedAt: Date.now() });
+        db.ref(`members/${myUUID}`).set({
+          name: myName, lat: pos.coords.latitude, lng: pos.coords.longitude,
+          color: selectedColor, initial: myName[0].toUpperCase(), updatedAt: Date.now()
+        });
       }, null, { enableHighAccuracy: true });
     }
   }, 1000);
@@ -579,6 +585,14 @@ db.ref('members').on('value', snap => {
 });
 
 setInterval(renderList, 5000);
+
+// 내 노드가 외부(참가자 초기화 등)에 의해 삭제되면 자동으로 공유 종료
+db.ref(`members/${myUUID}`).on('value', snap => {
+  if (!snap.val() && myName) {
+    leaveRace();
+    showToast('⚠️ 참가자가 초기화되어 위치 공유가 종료되었습니다.', 4000);
+  }
+});
 
 function makePopup(name, m) {
   const sec = Math.round((Date.now() - m.updatedAt) / 1000);
