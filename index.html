@@ -253,7 +253,7 @@
 
 <header>
   <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.13</span></h1>
+  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.14</span></h1>
   <span class="badge" id="memberCount" onclick="resetMembers()">0명</span>
   <span class="fb-status status-wait" id="fbStatus">⚪ 연결 중</span>
 </header>
@@ -460,7 +460,8 @@ function renderElevationChart() {
         }
       },
       scales: {
-        x: { type: 'linear', grid: { color: 'rgba(255,255,255,0.05)' },
+        x: { type: 'linear', min: 0, max: Math.round(gpxTotalDist),
+          grid: { color: 'rgba(255,255,255,0.05)' },
           ticks: { color: '#888', maxTicksLimit: 5, callback: v => `${(v/1000).toFixed(1)}km` } },
         y: { display: hasEle, grid: { color: 'rgba(255,255,255,0.05)' },
           ticks: { color: '#888', maxTicksLimit: 4, callback: v => `${v}m` } }
