@@ -8,6 +8,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -215,6 +216,26 @@
     }
     #toast.show { opacity: 1; }
 
+    /* ── 고도 프로필 패널 ── */
+    #elevPanel {
+      display: none; position: absolute;
+      top: 0; left: 268px; right: 0; height: 190px;
+      z-index: 200; background: rgba(14,22,46,.97);
+      border-bottom: 2px solid #0f3460;
+      flex-direction: column; padding: 6px 12px 8px;
+    }
+    #elevPanel.show { display: flex; }
+    #elevHeader {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 11px; color: #aaa; flex-shrink: 0; margin-bottom: 4px;
+    }
+    #elevHeader .elev-close {
+      background: none; border: none; color: #aaa; cursor: pointer;
+      font-size: 15px; line-height: 1; padding: 0 2px;
+    }
+    #elevCanvas { flex: 1; min-height: 0; }
+    @media (max-width: 620px) { #elevPanel { left: 0; } }
+
     .custom-marker {
       display: flex; align-items: center; justify-content: center;
       border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
@@ -232,7 +253,7 @@
 
 <header>
   <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.12</span></h1>
+  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.13</span></h1>
   <span class="badge" id="memberCount" onclick="resetMembers()">0명</span>
   <span class="fb-status status-wait" id="fbStatus">⚪ 연결 중</span>
 </header>
@@ -294,12 +315,21 @@
 
   <!-- 지도 위 버튼 오버레이 -->
   <div class="map-type-overlay">
-    <div class="mto-btn active" onclick="setMapType('street')">일반</div>
-    <div class="mto-btn" onclick="setMapType('satellite')">위성</div>
-    <div class="mto-btn" onclick="setMapType('topo')">지형</div>
+    <div class="mto-btn" id="elevBtn" onclick="toggleElevation()" title="고도 프로필">📈</div>
+    <div class="mto-btn active" data-map="street" onclick="setMapType('street')">일반</div>
+    <div class="mto-btn" data-map="satellite" onclick="setMapType('satellite')">위성</div>
+    <div class="mto-btn" data-map="topo" onclick="setMapType('topo')">지형</div>
     <div class="mto-btn mto-loc" onclick="goToMyLocation()" title="현재 위치">📍</div>
   </div>
 
+  <!-- 고도 프로필 패널 -->
+  <div id="elevPanel">
+    <div id="elevHeader">
+      <span>📈 고도 프로필</span>
+      <button class="elev-close" onclick="toggleElevation()">✕</button>
+    </div>
+    <canvas id="elevCanvas"></canvas>
+  </div>
 
   <div id="map"></div>
 
@@ -343,6 +373,104 @@ const tiles = {
 tiles.street.addTo(map);
 let currentTile = 'street';
 
+/* ── 경로 거리 데이터 ── */
+let gpxRoutePoints = [], gpxCumDist = [], gpxTotalDist = 0;
+let elevChart = null, elevVisible = false;
+
+function haversineDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180, Δλ = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function buildRouteData(points) {
+  gpxRoutePoints = points;
+  gpxCumDist = [0];
+  for (let i = 1; i < points.length; i++) {
+    gpxCumDist.push(gpxCumDist[i-1] + haversineDistance(
+      points[i-1].lat, points[i-1].lng, points[i].lat, points[i].lng));
+  }
+  gpxTotalDist = gpxCumDist[gpxCumDist.length - 1] || 0;
+}
+
+function findRoutePosition(lat, lng) {
+  if (!gpxRoutePoints.length || !gpxTotalDist) return null;
+  let minDist = Infinity, minIdx = 0;
+  for (let i = 0; i < gpxRoutePoints.length; i++) {
+    const d = haversineDistance(lat, lng, gpxRoutePoints[i].lat, gpxRoutePoints[i].lng);
+    if (d < minDist) { minDist = d; minIdx = i; }
+  }
+  return {
+    distFromStart: Math.round(gpxCumDist[minIdx]),
+    distRemaining: Math.round(gpxTotalDist - gpxCumDist[minIdx]),
+    progress: (gpxCumDist[minIdx] / gpxTotalDist * 100).toFixed(1),
+    ele: gpxRoutePoints[minIdx].ele || 0
+  };
+}
+
+function toggleElevation() {
+  if (!gpxRoutePoints.length) { showToast('GPX 파일을 먼저 업로드해 주세요'); return; }
+  elevVisible = !elevVisible;
+  document.getElementById('elevPanel').classList.toggle('show', elevVisible);
+  document.getElementById('elevBtn').classList.toggle('active', elevVisible);
+  if (elevVisible) renderElevationChart();
+  else if (elevChart) { elevChart.destroy(); elevChart = null; }
+}
+
+function renderElevationChart() {
+  if (!elevVisible || !gpxRoutePoints.length) return;
+  const canvas = document.getElementById('elevCanvas');
+  if (elevChart) { elevChart.destroy(); elevChart = null; }
+  const hasEle = gpxRoutePoints.some(p => (p.ele || 0) > 0);
+  const profileData = gpxRoutePoints.map((p, i) =>
+    ({ x: Math.round(gpxCumDist[i]), y: hasEle ? (p.ele || 0) : 0 }));
+  const participantDatasets = Object.entries(lastData).map(([uuid, m]) => {
+    const pos = findRoutePosition(m.lat, m.lng);
+    if (!pos) return null;
+    return {
+      type: 'scatter', label: m.name || uuid,
+      data: [{ x: pos.distFromStart, y: hasEle ? pos.ele : 0 }],
+      backgroundColor: m.color, borderColor: '#fff', borderWidth: 2,
+      pointRadius: 8, pointHoverRadius: 10, order: 0
+    };
+  }).filter(Boolean);
+  elevChart = new Chart(canvas.getContext('2d'), {
+    type: 'line',
+    data: {
+      datasets: [
+        { label: '고도', data: profileData, borderColor: '#f39c12',
+          backgroundColor: 'rgba(243,156,18,0.15)', fill: true,
+          tension: 0.3, pointRadius: 0, order: 1 },
+        ...participantDatasets
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: items => `${(items[0].parsed.x/1000).toFixed(2)} km`,
+            label: item => item.dataset.label === '고도'
+              ? `고도: ${item.parsed.y}m`
+              : `${item.dataset.label} — ${(item.parsed.x/1000).toFixed(2)}km`
+          }
+        }
+      },
+      scales: {
+        x: { type: 'linear', grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#888', maxTicksLimit: 5, callback: v => `${(v/1000).toFixed(1)}km` } },
+        y: { display: hasEle, grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#888', maxTicksLimit: 4, callback: v => `${v}m` } }
+      }
+    }
+  });
+}
+
+function updateElevationMarkers() { if (elevVisible) renderElevationChart(); }
+
 // 커스텀 축척
 function updateScale() {
   const zoom = map.getZoom();
@@ -371,8 +499,8 @@ function setMapType(type) {
   map.removeLayer(tiles[currentTile]);
   tiles[type].addTo(map);
   currentTile = type;
-  document.querySelectorAll('.mto-btn').forEach((b,i) =>
-    b.classList.toggle('active', ['street','satellite','topo'][i] === type));
+  document.querySelectorAll('.mto-btn[data-map]').forEach(b =>
+    b.classList.toggle('active', b.dataset.map === type));
 }
 
 /* ── 색상 선택 토글 ── */
@@ -387,14 +515,14 @@ document.addEventListener('click', () => {
 
 /* ── 색상 ── */
 const COLORS = [
-  '#FF0000', '#FF5E00',  
-  '#FFBB00', '#FFE400',  
-  '#ABF200', '#1DDB16',  
-  '#00D8FF', '#0054FF',  
-  '#0100FF', '#5F00FF',  
-  '#FF00DD', '#990085',  
-  '#FF007F', '#99004C',  
-  '#90a4ae', '#607d8b'   
+  '#ff1744', '#c62828',  // 빨
+  '#ff9100', '#e65100',  // 주
+  '#ffea00', '#f57f17',  // 노
+  '#00e676', '#4caf50',  // 초
+  '#448aff', '#2196f3',  // 파
+  '#7986cb', '#5c6bc0',  // 남
+  '#ab47bc', '#9c27b0',  // 보
+  '#90a4ae', '#607d8b'   // 검
 ];
 let selectedColor = COLORS[0];
 
@@ -593,6 +721,7 @@ db.ref('members').on('value', snap => {
   });
   document.getElementById('memberCount').textContent = `${Object.keys(lastData).length}명`;
   renderList();
+  updateElevationMarkers();
 });
 
 setInterval(renderList, 5000);
@@ -608,7 +737,20 @@ db.ref(`members/${myUUID}`).on('value', snap => {
 function makePopup(name, m) {
   const sec = Math.round((Date.now() - m.updatedAt) / 1000);
   const ago = sec < 60 ? `${sec}초 전` : `${Math.floor(sec/60)}분 전`;
-  return `<b style="color:${m.color}">${name}</b><br>위도 ${m.lat.toFixed(5)}<br>경도 ${m.lng.toFixed(5)}<br><small>🕐 ${ago} 갱신</small>`;
+  let routeHtml = '';
+  if (gpxTotalDist > 0) {
+    const pos = findRoutePosition(m.lat, m.lng);
+    if (pos) {
+      routeHtml =
+        `<hr style="border:none;border-top:1px solid #444;margin:4px 0">` +
+        `<small>` +
+        `📏 총거리 ${Math.round(gpxTotalDist).toLocaleString()}m<br>` +
+        `📍 현재 ${pos.distFromStart.toLocaleString()}m (${pos.progress}%)<br>` +
+        `🏁 남은거리 ${pos.distRemaining.toLocaleString()}m` +
+        `</small>`;
+    }
+  }
+  return `<b style="color:${m.color}">${name}</b><br>위도 ${m.lat.toFixed(5)}<br>경도 ${m.lng.toFixed(5)}<br><small>🕐 ${ago} 갱신</small>${routeHtml}`;
 }
 
 function renderList() {
@@ -655,7 +797,9 @@ function uploadGPX(event) {
   reader.onload = e => {
     const doc = new DOMParser().parseFromString(e.target.result, 'application/xml');
     const pts = [...doc.querySelectorAll('trkpt,rtept')].map(p => ({
-      lat: parseFloat(p.getAttribute('lat')), lng: parseFloat(p.getAttribute('lon'))
+      lat: parseFloat(p.getAttribute('lat')),
+      lng: parseFloat(p.getAttribute('lon')),
+      ele: parseFloat(p.querySelector('ele')?.textContent) || 0
     })).filter(p => !isNaN(p.lat));
     if (!pts.length) { showToast('GPX 좌표를 찾을 수 없습니다'); return; }
     db.ref('route').set({ points: pts, name: file.name, uploadedAt: Date.now() });
@@ -677,7 +821,13 @@ db.ref('route').on('value', snap => {
   if (gpxS)    { map.removeLayer(gpxS);    gpxS = null; }
   if (gpxE)    { map.removeLayer(gpxE);    gpxE = null; }
   const data = snap.val();
-  if (!data?.points?.length) { setGpxUI(false); return; }
+  if (!data?.points?.length) {
+    setGpxUI(false);
+    gpxRoutePoints = []; gpxCumDist = []; gpxTotalDist = 0;
+    if (elevVisible) toggleElevation();
+    return;
+  }
+  buildRouteData(data.points);
   const ll = data.points.map(p => [p.lat, p.lng]);
   gpxLine = L.polyline(ll, { color:'#f39c12', weight:3, opacity:.9 }).addTo(map);
   const mk = html => L.divIcon({ className:'', iconSize:[16,16], iconAnchor:[8,8], html });
