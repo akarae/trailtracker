@@ -273,7 +273,7 @@
 <div id="lobby" class="lobby-overlay">
   <div class="lobby-box">
     <div class="lobby-title">🏃 Trail Tracker</div>
-    <div class="lobby-ver" onclick="adminPrompt()">v0.17</div>
+    <div class="lobby-ver">v0.17</div>
     <div class="lobby-sub">그룹을 만들거나 초대 코드로 참가하세요</div>
     <div class="lobby-stats">
       <div class="lobby-stat-item">
@@ -293,11 +293,11 @@
       oninput="this.value=this.value.toUpperCase()" />
     <button class="btn btn-secondary" onclick="joinGroupByCode()" style="margin-top:6px">→ 그룹 참가</button>
     <div style="text-align:center;margin-top:4px">
-      <a href="https://github.com/akarae/trailtracker" target="_blank"
-         style="font-size:10px;color:#444;text-decoration:none;"
+      <span onclick="adminPrompt()"
+         style="font-size:10px;color:#444;text-decoration:none;cursor:pointer;"
          onmouseover="this.style.color='#888'" onmouseout="this.style.color='#444'">
-        made by Rae with COCO
-      </a>
+        created by Rae with COCO
+      </span>
     </div>
   </div>
 </div>
