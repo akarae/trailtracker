@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Trail Tracker</title>
+  <title>Trail Race Tracker</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -32,7 +32,7 @@
       display: flex; flex-direction: column; gap: 10px;
     }
     .lobby-title { font-size: 22px; font-weight: 700; color: #e94560; text-align: center; }
-    .lobby-ver   { font-size: 10px; color: #555; text-align: center; margin-top: -6px; }
+    .lobby-ver   { font-size: 10px; color: #555; text-align: center; margin-top: -6px; cursor: pointer; user-select: none; }
     .lobby-sub   { font-size: 12px; color: #888; text-align: center; margin-bottom: 4px; }
     .lobby-divider {
       text-align: center; font-size: 11px; color: #444;
@@ -273,7 +273,7 @@
 <div id="lobby" class="lobby-overlay">
   <div class="lobby-box">
     <div class="lobby-title">🏃 Trail Tracker</div>
-    <div class="lobby-ver">v0.16</div>
+    <div class="lobby-ver" onclick="adminPrompt()">v0.17</div>
     <div class="lobby-sub">그룹을 만들거나 초대 코드로 참가하세요</div>
     <div class="lobby-stats">
       <div class="lobby-stat-item">
@@ -292,12 +292,39 @@
       style="text-transform:uppercase;letter-spacing:4px;text-align:center;font-size:16px;font-weight:700;margin-bottom:0"
       oninput="this.value=this.value.toUpperCase()" />
     <button class="btn btn-secondary" onclick="joinGroupByCode()" style="margin-top:6px">→ 그룹 참가</button>
+    <div style="text-align:center;margin-top:4px">
+      <a href="https://github.com/akarae/trailtracker" target="_blank"
+         style="font-size:10px;color:#444;text-decoration:none;"
+         onmouseover="this.style.color='#888'" onmouseout="this.style.color='#444'">
+        made by Rae with COCO
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ── 관리자 패널 ── -->
+<div id="adminPanel" style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.7);align-items:center;justify-content:center;">
+  <div style="width:88%;max-width:340px;background:#16213e;border:1px solid #e94560;border-radius:16px;padding:24px 20px;display:flex;flex-direction:column;gap:10px;">
+    <div style="font-size:16px;font-weight:700;color:#e94560;text-align:center;">🔧 관리자 패널</div>
+    <div style="font-size:10px;color:#555;text-align:center;margin-top:-6px;">Trail Tracker Admin</div>
+
+    <!-- 그룹 목록 -->
+    <div style="background:#0f3460;border-radius:8px;padding:10px 12px;max-height:220px;overflow-y:auto;" id="adminGroupList">
+      <div style="font-size:10px;color:#e94560;font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">그룹 목록</div>
+      <div id="adminGroupItems" style="display:flex;flex-direction:column;gap:5px;">
+        <div style="font-size:12px;color:#555;">불러오는 중...</div>
+      </div>
+    </div>
+
+    <!-- 초기화 -->
+    <button class="btn btn-red" onclick="adminResetAll()" style="margin-top:0">🗑 전체 데이터 초기화</button>
+    <button class="btn btn-secondary" onclick="closeAdmin()" style="margin-top:0">← 로비로 돌아가기</button>
   </div>
 </div>
 
 <header>
   <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.16</span></h1>
+  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.17</span></h1>
   <span class="badge" id="memberCount" onclick="resetMembers()">0명</span>
   <span class="group-badge" id="groupBadge" style="display:none"></span>
   <span class="fb-status status-wait" id="fbStatus">⚪ 연결 중</span>
@@ -1037,6 +1064,60 @@ function closeSidebar() {
   setTimeout(() => map.invalidateSize(), 300);
 }
 map.on('click', closeSidebar);
+
+/* ── 관리자 ── */
+function adminPrompt() {
+  const pw = prompt('관리자 비밀번호를 입력하세요');
+  if (pw === null) return;
+  if (pw !== 'eugene') { showToast('⚠️ 비밀번호가 틀렸습니다'); return; }
+  openAdmin();
+}
+
+function openAdmin() {
+  const panel = document.getElementById('adminPanel');
+  panel.style.display = 'flex';
+  loadAdminGroups();
+}
+
+function closeAdmin() {
+  document.getElementById('adminPanel').style.display = 'none';
+}
+
+function loadAdminGroups() {
+  const container = document.getElementById('adminGroupItems');
+  container.innerHTML = '<div style="font-size:12px;color:#555;">불러오는 중...</div>';
+  db.ref('groups').once('value').then(snap => {
+    const groups = snap.val() || {};
+    const entries = Object.entries(groups);
+    if (!entries.length) {
+      container.innerHTML = '<div style="font-size:12px;color:#555;">활성 그룹 없음</div>';
+      return;
+    }
+    container.innerHTML = entries.map(([gid, g]) => {
+      const memberCount = Object.keys(g.members || {}).length;
+      const name = g.info?.name || '(이름 없음)';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;background:#16213e;border-radius:6px;padding:6px 10px;">
+        <div>
+          <div style="font-size:12px;color:#eee;font-weight:600;">${name}</div>
+          <div style="font-size:10px;color:#555;letter-spacing:2px;">${gid}</div>
+        </div>
+        <div style="font-size:12px;color:#f39c12;font-weight:700;">${memberCount}명</div>
+      </div>`;
+    }).join('');
+  });
+}
+
+function adminResetAll() {
+  if (!confirm('⚠️ 전체 그룹 및 참가자 데이터를 초기화하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.')) return;
+  db.ref('groups').remove()
+    .then(() => {
+      showToast('✅ 전체 데이터가 초기화되었습니다');
+      loadAdminGroups();
+      // 현재 그룹에 있던 경우 로비로
+      if (currentGroupId) exitToLobby();
+    })
+    .catch(err => showToast('초기화 실패: ' + err.message));
+}
 
 /* ── 토스트 ── */
 let toastTimer;
