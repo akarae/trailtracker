@@ -19,6 +19,32 @@
       display: flex; flex-direction: column; overflow: hidden;
     }
 
+    /* ── 로비 ── */
+    .lobby-overlay {
+      position: fixed; inset: 0; z-index: 2000;
+      background: #1a1a2e;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .lobby-box {
+      width: 88%; max-width: 340px;
+      background: #16213e; border: 1px solid #0f3460;
+      border-radius: 16px; padding: 28px 20px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .lobby-title { font-size: 22px; font-weight: 700; color: #e94560; text-align: center; }
+    .lobby-ver   { font-size: 10px; color: #555; text-align: center; margin-top: -6px; }
+    .lobby-sub   { font-size: 12px; color: #888; text-align: center; margin-bottom: 4px; }
+    .lobby-divider {
+      text-align: center; font-size: 11px; color: #444;
+      position: relative; margin: 4px 0;
+    }
+    .lobby-divider::before, .lobby-divider::after {
+      content: ''; position: absolute; top: 50%;
+      width: 42%; height: 1px; background: #0f3460;
+    }
+    .lobby-divider::before { left: 0; }
+    .lobby-divider::after  { right: 0; }
+
     header {
       background: #16213e; padding: 10px 14px;
       display: flex; align-items: center; gap: 10px;
@@ -27,6 +53,7 @@
     header h1 { font-size: 15px; font-weight: 700; color: #e94560; white-space: nowrap; }
     .badge { background: #0f3460; padding: 3px 9px; border-radius: 12px; font-size: 11px; color: #aaa; cursor: pointer; user-select: none; }
     .badge:active { background: #1a4a7a; }
+    .group-badge { background: #0f3460; padding: 3px 9px; border-radius: 12px; font-size: 11px; color: #f39c12; font-weight: 700; letter-spacing: 2px; }
     .fb-status { font-size: 11px; margin-left: auto; white-space: nowrap; }
     .status-ok   { color: #2ecc71; }
     .status-err  { color: #e94560; }
@@ -44,14 +71,9 @@
       width: 268px; background: #16213e;
       border-right: 1px solid #0f3460;
       display: flex; flex-direction: column;
-      overflow: hidden;
-      flex-shrink: 0;
+      overflow: hidden; flex-shrink: 0;
     }
-
-    /* 사이드바 상단 고정 영역 */
     .sidebar-top { overflow-y: auto; flex-shrink: 0; -webkit-overflow-scrolling: touch; }
-
-    /* 참가자 목록 영역 — 남은 공간 차지 + 스크롤 */
     .sidebar-members {
       flex: 1; min-height: 0;
       display: flex; flex-direction: column;
@@ -60,19 +82,15 @@
     .sidebar-members .section-title {
       padding: 10px 12px 6px;
       font-size: 10px; text-transform: uppercase;
-      letter-spacing: 1px; color: #e94560; font-weight: 700;
-      flex-shrink: 0;
+      letter-spacing: 1px; color: #e94560; font-weight: 700; flex-shrink: 0;
     }
     .member-list {
-      flex: 1;
-      height: 0;           /* flex 스크롤 핵심 트릭 */
-      overflow-y: scroll;
-      -webkit-overflow-scrolling: touch;
+      flex: 1; height: 0;
+      overflow-y: scroll; -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
       padding: 0 12px 10px;
       display: flex; flex-direction: column; gap: 5px;
     }
-    /* 스크롤바 스타일 */
     .member-list::-webkit-scrollbar { width: 4px; }
     .member-list::-webkit-scrollbar-track { background: transparent; }
     .member-list::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 2px; }
@@ -86,17 +104,23 @@
       }
       .sidebar.open { transform: translateX(0); box-shadow: 4px 0 20px rgba(0,0,0,.6); }
       #customScale { left: 10px; }
+      #elevPanel { left: 0; }
     }
     .overlay {
       display: none; position: absolute; inset: 0;
-      background: rgba(0,0,0,.5); z-index: 140;
-      pointer-events: none;
+      background: rgba(0,0,0,.5); z-index: 140; pointer-events: none;
     }
-    /* 사이드바 열릴 때 지도 버튼 레이어를 사이드바 뒤로 */
     body.sidebar-open .map-type-overlay { z-index: 100; }
 
     .section { padding: 12px 12px 10px; border-bottom: 1px solid #0f3460; }
     .section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #e94560; margin-bottom: 8px; font-weight: 700; }
+
+    /* 그룹 정보 섹션 */
+    .group-code-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+    .group-code {
+      background: #0f3460; padding: 4px 10px; border-radius: 6px;
+      font-size: 15px; letter-spacing: 4px; color: #f39c12; font-weight: 700;
+    }
 
     label { display: block; font-size: 11px; color: #aaa; margin-bottom: 3px; }
     input[type="text"], input[type="number"] {
@@ -107,10 +131,8 @@
     input:focus { border-color: #e94560; }
     input:disabled { opacity: .5; }
 
-    /* 2열 그리드 */
     .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 
-    /* 색상 선택 버튼 + 팝업 */
     .color-pick-btn {
       width: 100%; padding: 7px 8px; border: 1px solid #1a4a8a;
       border-radius: 6px; background: #0f3460; color: #eee;
@@ -145,7 +167,6 @@
     .file-btn:hover { border-color: #e94560; color: #e94560; }
     #gpxInput { display: none; }
 
-    /* 지도 위 타입 오버레이 */
     .map-type-overlay {
       position: absolute; top: 10px; right: 10px; z-index: 400;
       display: flex; gap: 4px;
@@ -159,22 +180,33 @@
     .mto-btn.active { background: #e94560; border-color: #e94560; color: #fff; }
     .mto-loc { font-size: 15px; }
 
+    /* 고도 프로필 패널 */
+    #elevPanel {
+      display: none; position: absolute;
+      top: 0; left: 268px; right: 0; height: 190px;
+      z-index: 200; background: rgba(14,22,46,.97);
+      border-bottom: 2px solid #0f3460;
+      flex-direction: column; padding: 6px 12px 8px;
+    }
+    #elevPanel.show { display: flex; }
+    #elevHeader {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 11px; color: #aaa; flex-shrink: 0; margin-bottom: 4px;
+    }
+    #elevHeader .elev-close {
+      background: none; border: none; color: #aaa; cursor: pointer;
+      font-size: 15px; line-height: 1; padding: 0 2px;
+    }
+    #elevCanvas { flex: 1; min-height: 0; }
+
     /* 커스텀 축척 */
     #customScale {
       position: absolute; bottom: 14px; left: calc(268px + 10px); z-index: 5;
       display: flex; flex-direction: column; align-items: flex-start;
       pointer-events: none;
     }
-    #customScaleBar {
-      height: 4px; background: #fff;
-      border: 1px solid rgba(0,0,0,.5);
-      border-top: none;
-    }
-    #customScaleLabel {
-      font-size: 10px; color: #fff;
-      text-shadow: 0 0 3px #000, 0 0 3px #000;
-      margin-top: 2px;
-    }
+    #customScaleBar { height: 4px; background: #fff; border: 1px solid rgba(0,0,0,.5); border-top: none; }
+    #customScaleLabel { font-size: 10px; color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; margin-top: 2px; }
 
     .my-badge {
       background: #0d2b0d; border: 1px solid #2ecc71;
@@ -203,38 +235,15 @@
     #map { flex: 1; z-index: 1; }
 
     #toast {
-      position: fixed;
-      top: 30%; left: 50%; transform: translateX(-50%);
+      position: fixed; top: 30%; left: 50%; transform: translateX(-50%);
       background: #16213e; border: 2px solid #e94560;
       color: #eee; padding: 14px 22px; border-radius: 12px;
       font-size: 14px; font-weight: 600;
-      z-index: 9999; opacity: 0;
-      pointer-events: none; transition: opacity .3s;
-      max-width: 80vw; line-height: 1.7;
-      text-align: center;
+      z-index: 9999; opacity: 0; pointer-events: none; transition: opacity .3s;
+      max-width: 80vw; line-height: 1.7; text-align: center;
       box-shadow: 0 8px 30px rgba(0,0,0,.7);
     }
     #toast.show { opacity: 1; }
-
-    /* ── 고도 프로필 패널 ── */
-    #elevPanel {
-      display: none; position: absolute;
-      top: 0; left: 268px; right: 0; height: 190px;
-      z-index: 200; background: rgba(14,22,46,.97);
-      border-bottom: 2px solid #0f3460;
-      flex-direction: column; padding: 6px 12px 8px;
-    }
-    #elevPanel.show { display: flex; }
-    #elevHeader {
-      display: flex; justify-content: space-between; align-items: center;
-      font-size: 11px; color: #aaa; flex-shrink: 0; margin-bottom: 4px;
-    }
-    #elevHeader .elev-close {
-      background: none; border: none; color: #aaa; cursor: pointer;
-      font-size: 15px; line-height: 1; padding: 0 2px;
-    }
-    #elevCanvas { flex: 1; min-height: 0; }
-    @media (max-width: 620px) { #elevPanel { left: 0; } }
 
     .custom-marker {
       display: flex; align-items: center; justify-content: center;
@@ -251,10 +260,27 @@
 </head>
 <body>
 
+<!-- ── 로비 ── -->
+<div id="lobby" class="lobby-overlay">
+  <div class="lobby-box">
+    <div class="lobby-title">🏃 Trail Tracker</div>
+    <div class="lobby-ver">v0.15</div>
+    <div class="lobby-sub">그룹을 만들거나 초대 코드로 참가하세요</div>
+    <input type="text" id="groupNameInput" placeholder="그룹 이름 (예: 수성20K 팀A)" maxlength="20" />
+    <button class="btn btn-primary" onclick="createGroup()" style="margin-top:0">✚ 그룹 만들기</button>
+    <div class="lobby-divider">또는</div>
+    <input type="text" id="groupCodeInput" placeholder="초대 코드 6자리" maxlength="6"
+      style="text-transform:uppercase;letter-spacing:4px;text-align:center;font-size:16px;font-weight:700;margin-bottom:0"
+      oninput="this.value=this.value.toUpperCase()" />
+    <button class="btn btn-secondary" onclick="joinGroupByCode()" style="margin-top:6px">→ 그룹 참가</button>
+  </div>
+</div>
+
 <header>
   <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.14</span></h1>
+  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.15</span></h1>
   <span class="badge" id="memberCount" onclick="resetMembers()">0명</span>
+  <span class="group-badge" id="groupBadge" style="display:none"></span>
   <span class="fb-status status-wait" id="fbStatus">⚪ 연결 중</span>
 </header>
 
@@ -262,10 +288,20 @@
   <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
   <div class="sidebar" id="sidebar">
-
     <div class="sidebar-top">
 
-      <!-- GPX: 배타적 표시 -->
+      <!-- 그룹 정보 -->
+      <div class="section" id="groupInfoSection" style="display:none">
+        <div class="section-title">🏷 그룹 정보</div>
+        <div style="font-size:12px;color:#eee;margin-bottom:6px" id="groupNameDisplay"></div>
+        <div class="group-code-row">
+          <span class="group-code" id="groupCodeDisplay"></span>
+          <button class="btn btn-secondary" style="margin-top:0;width:auto;padding:4px 8px;font-size:11px" onclick="copyGroupUrl()">🔗 초대 링크</button>
+        </div>
+        <button class="btn btn-red" style="margin-top:0;font-size:11px;padding:6px" onclick="deleteGroup()">🗑 그룹 종료</button>
+      </div>
+
+      <!-- GPX -->
       <div class="section">
         <label for="gpxInput" class="file-btn" id="gpxLabel">📂 GPX 파일 업로드</label>
         <button class="btn btn-secondary" id="deleteGpxBtn" style="display:none;margin-top:0" onclick="deleteGPX()">🗑 경로 삭제</button>
@@ -277,11 +313,10 @@
         <div class="grid2">
           <input type="text" id="nameInput" placeholder="이름을 입력해 주세요" maxlength="8" style="margin-bottom:0" />
           <button class="color-pick-btn" id="colorPickBtn" onclick="toggleColorPopup(event)">
-            <span class="color-preview" id="colorPreview" style="background:#e94560"></span>
+            <span class="color-preview" id="colorPreview" style="background:#ff1744"></span>
             색상 선택
           </button>
         </div>
-        <!-- 색상 스와치: 버튼 클릭 시 인라인으로 펼쳐짐 -->
         <div class="color-row" id="colorRow" style="display:none; margin-top:8px; padding-top:8px; border-top:1px solid #0f3460;"></div>
         <div class="my-badge" id="myBadge"></div>
       </div>
@@ -474,21 +509,16 @@ function updateElevationMarkers() { if (elevVisible) renderElevationChart(); }
 
 // 커스텀 축척
 function updateScale() {
-  const zoom = map.getZoom();
-  const lat  = map.getCenter().lat;
+  const zoom = map.getZoom(), lat = map.getCenter().lat;
   const mpp  = 156543.03392 * Math.cos(lat * Math.PI / 180) / Math.pow(2, zoom);
-  const targetPx = 80;
-  const meters   = mpp * targetPx;
-
+  const meters = mpp * 80;
   let label, barPx;
   if (meters >= 1000) {
     const km = Math.round(meters / 1000 * 10) / 10;
-    label = `${km} km`;
-    barPx = (km * 1000) / mpp;
+    label = `${km} km`; barPx = (km * 1000) / mpp;
   } else {
     const m = Math.round(meters / 10) * 10 || 1;
-    label = `${m} m`;
-    barPx = m / mpp;
+    label = `${m} m`; barPx = m / mpp;
   }
   document.getElementById('customScaleBar').style.width = Math.round(barPx) + 'px';
   document.getElementById('customScaleLabel').textContent = label;
@@ -504,7 +534,7 @@ function setMapType(type) {
     b.classList.toggle('active', b.dataset.map === type));
 }
 
-/* ── 색상 선택 토글 ── */
+/* ── 색상 선택 ── */
 function toggleColorPopup(e) {
   e.stopPropagation();
   const row = document.getElementById('colorRow');
@@ -514,7 +544,6 @@ document.addEventListener('click', () => {
   document.getElementById('colorRow').style.display = 'none';
 });
 
-/* ── 색상 ── */
 const COLORS = [
   '#ff1744', '#c62828',  // 빨
   '#ff9100', '#e65100',  // 주
@@ -539,7 +568,7 @@ function pickColor(c, el) {
   document.getElementById('colorRow').style.display = 'none';
 }
 
-/* ── UUID 발급 (기기 식별자) ── */
+/* ── UUID ── */
 function getOrCreateUUID() {
   let uuid = localStorage.getItem('trackerUUID');
   if (!uuid) {
@@ -553,37 +582,196 @@ function getOrCreateUUID() {
 }
 const myUUID = getOrCreateUUID();
 
+/* ── 그룹 관리 ── */
+let currentGroupId = null, currentGroupName = null;
+
+function groupRef(path) {
+  return path ? db.ref(`groups/${currentGroupId}/${path}`) : db.ref(`groups/${currentGroupId}`);
+}
+
+function generateGroupId() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length: 6}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
+async function createGroup() {
+  const name = document.getElementById('groupNameInput').value.trim();
+  if (!name) { showToast('그룹 이름을 입력해 주세요'); return; }
+
+  const snap = await db.ref('groups').once('value');
+  const groups = snap.val() || {};
+  if (Object.keys(groups).length >= 10) {
+    showToast('⚠️ 최대 그룹 수(10개)에 도달했습니다', 4000); return;
+  }
+
+  const groupId = generateGroupId();
+  await db.ref(`groups/${groupId}/info`).set({
+    name, createdAt: Date.now(), creatorUUID: myUUID
+  });
+  enterGroup(groupId, name);
+}
+
+async function joinGroupByCode() {
+  const code = document.getElementById('groupCodeInput').value.trim().toUpperCase();
+  if (code.length < 4) { showToast('올바른 코드를 입력해 주세요'); return; }
+
+  const snap = await db.ref(`groups/${code}/info`).once('value');
+  if (!snap.val()) { showToast('⚠️ 존재하지 않는 그룹입니다', 3000); return; }
+
+  enterGroup(code, snap.val().name);
+}
+
+function enterGroup(groupId, groupName) {
+  currentGroupId = groupId;
+  currentGroupName = groupName;
+  history.replaceState(null, '', `?group=${groupId}`);
+
+  document.getElementById('lobby').style.display = 'none';
+  document.getElementById('groupInfoSection').style.display = 'block';
+  document.getElementById('groupNameDisplay').textContent = groupName;
+  document.getElementById('groupCodeDisplay').textContent = groupId;
+  document.getElementById('groupBadge').textContent = groupId;
+  document.getElementById('groupBadge').style.display = 'inline-block';
+
+  startGroupListeners();
+}
+
+function exitToLobby() {
+  if (myName) leaveRace(true);
+  currentGroupId = null; currentGroupName = null;
+  lastData = {};
+  Object.keys(markers).forEach(uuid => { map.removeLayer(markers[uuid]); delete markers[uuid]; });
+  gpxRoutePoints = []; gpxCumDist = []; gpxTotalDist = 0;
+  if (gpxLine) { map.removeLayer(gpxLine); gpxLine = null; }
+  if (gpxS) { map.removeLayer(gpxS); gpxS = null; }
+  if (gpxE) { map.removeLayer(gpxE); gpxE = null; }
+  if (elevVisible) { elevVisible = false; document.getElementById('elevPanel').classList.remove('show'); if (elevChart) { elevChart.destroy(); elevChart = null; } }
+  history.replaceState(null, '', location.pathname);
+  document.getElementById('lobby').style.display = 'flex';
+  document.getElementById('groupInfoSection').style.display = 'none';
+  document.getElementById('groupBadge').style.display = 'none';
+  document.getElementById('memberCount').textContent = '0명';
+  setGpxUI(false);
+  renderList();
+}
+
+function deleteGroup() {
+  if (!confirm('그룹을 종료하시겠습니까?\n모든 참가자가 퇴장됩니다.')) return;
+  if (myName) leaveRace(true);
+  groupRef().remove()
+    .then(() => exitToLobby())
+    .catch(err => showToast('그룹 종료 실패: ' + err.message));
+}
+
+function copyGroupUrl() {
+  const url = `${location.origin}${location.pathname}?group=${currentGroupId}`;
+  navigator.clipboard.writeText(url)
+    .then(() => showToast('✅ 초대 링크가 복사되었습니다'))
+    .catch(() => showToast('링크: ' + url, 5000));
+}
+
+function startGroupListeners() {
+  // 참가자 목록
+  groupRef('members').on('value', snap => {
+    lastData = snap.val() || {};
+    Object.keys(markers).forEach(uuid => {
+      if (!lastData[uuid]) { map.removeLayer(markers[uuid]); delete markers[uuid]; }
+    });
+    Object.entries(lastData).forEach(([uuid, m]) => {
+      const displayName = m.name || uuid;
+      if (markers[uuid]) {
+        markers[uuid].setLatLng([m.lat, m.lng]);
+        markers[uuid].setPopupContent(makePopup(displayName, m));
+      } else {
+        markers[uuid] = L.marker([m.lat, m.lng], { icon: createIcon(m.color, m.initial, displayName) })
+          .addTo(map).bindPopup(makePopup(displayName, m));
+      }
+    });
+    document.getElementById('memberCount').textContent = `${Object.keys(lastData).length}명`;
+    renderList();
+    updateElevationMarkers();
+  });
+
+  // 내 노드 삭제 감지
+  groupRef(`members/${myUUID}`).on('value', snap => {
+    if (!snap.val() && myName) {
+      leaveRace(true);
+      showToast('⚠️ 참가자가 초기화되어 위치 공유가 종료되었습니다.', 4000);
+    }
+  });
+
+  // 그룹 삭제 감지
+  groupRef('info').on('value', snap => {
+    if (!snap.val() && currentGroupId) {
+      showToast('⚠️ 그룹이 종료되었습니다.', 4000);
+      exitToLobby();
+    }
+  });
+
+  // 경로
+  groupRef('route').on('value', snap => {
+    if (gpxLine) { map.removeLayer(gpxLine); gpxLine = null; }
+    if (gpxS)    { map.removeLayer(gpxS);    gpxS = null; }
+    if (gpxE)    { map.removeLayer(gpxE);    gpxE = null; }
+    const data = snap.val();
+    if (!data?.points?.length) {
+      setGpxUI(false);
+      gpxRoutePoints = []; gpxCumDist = []; gpxTotalDist = 0;
+      if (elevVisible) toggleElevation();
+      return;
+    }
+    buildRouteData(data.points);
+    const ll = data.points.map(p => [p.lat, p.lng]);
+    gpxLine = L.polyline(ll, { color:'#f39c12', weight:3, opacity:.9 }).addTo(map);
+    const mk = html => L.divIcon({ className:'', iconSize:[16,16], iconAnchor:[8,8], html });
+    gpxS = L.marker(ll[0], { icon: mk('<div style="background:#2ecc71;color:#fff;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;border:2px solid #fff">S</div>') }).addTo(map).bindPopup('🏁 출발');
+    gpxE = L.marker(ll[ll.length-1], { icon: mk('<div style="background:#e94560;color:#fff;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;border:2px solid #fff">F</div>') }).addTo(map).bindPopup('🏆 도착');
+    setGpxUI(true);
+    map.fitBounds(gpxLine.getBounds(), { padding:[30,30] });
+  });
+}
+
 /* ── 참가자 상태 ── */
 let myName = null, myWatchId = null, countdownTimer = null;
 const markers = {};
 let lastData = {};
 
-// 페이지 로드 시 localStorage에 세션 정보가 있으면 자동 재연결
+/* ── 페이지 로드 ── */
 window.addEventListener('load', () => {
-  const savedName  = localStorage.getItem('trackerName');
-  const savedColor = localStorage.getItem('trackerColor');
-  if (!savedName) return;
+  const urlGroupId = new URLSearchParams(location.search).get('group');
+  if (urlGroupId) {
+    // URL에 그룹 코드가 있으면 자동 입장 시도
+    db.ref(`groups/${urlGroupId}/info`).once('value').then(snap => {
+      if (!snap.val()) {
+        showToast('⚠️ 해당 그룹을 찾을 수 없습니다', 3000);
+        history.replaceState(null, '', location.pathname);
+        return;
+      }
+      enterGroup(urlGroupId, snap.val().name);
 
-  // 색상 복원
-  if (savedColor) {
-    selectedColor = savedColor;
-    document.getElementById('colorPreview').style.background = savedColor;
-    document.querySelectorAll('.color-swatch').forEach(s => {
-      s.classList.toggle('selected', s.dataset.color === savedColor);
+      // 이전 세션 복원
+      const savedName  = localStorage.getItem('trackerName');
+      const savedColor = localStorage.getItem('trackerColor');
+      if (!savedName) return;
+      if (savedColor) {
+        selectedColor = savedColor;
+        document.getElementById('colorPreview').style.background = savedColor;
+        document.querySelectorAll('.color-swatch').forEach(s =>
+          s.classList.toggle('selected', s.dataset.color === savedColor));
+      }
+      document.getElementById('nameInput').value = savedName;
+      showToast(`🔄 ${savedName} 세션을 복원 중입니다...`);
+      requestGPS(savedName);
     });
   }
-
-  // 이름 복원 후 자동 재연결
-  document.getElementById('nameInput').value = savedName;
-  showToast(`🔄 ${savedName} 세션을 복원 중입니다...`);
-  requestGPS(savedName);
+  // URL에 그룹 없으면 로비를 그대로 표시 (기본 상태)
 });
 
 // 화면 다시 켜지면 위치 갱신
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && myName) {
+  if (document.visibilityState === 'visible' && myName && currentGroupId) {
     navigator.geolocation.getCurrentPosition(pos => {
-      db.ref(`members/${myUUID}`).set({
+      groupRef(`members/${myUUID}`).set({
         name: myName, lat: pos.coords.latitude,
         lng: pos.coords.longitude, color: selectedColor,
         initial: myName[0].toUpperCase(), updatedAt: Date.now()
@@ -592,17 +780,15 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-// 참가자 전체 강제 리셋 (타이틀 뱃지 클릭 시 호출)
+// 참가자 전체 리셋
 function resetMembers() {
+  if (!currentGroupId) return;
   if (!confirm('참가자를 초기화하시겠습니까?\n\n현재 등록된 모든 참가자 정보가 삭제됩니다.')) return;
-  // 내 공유 상태 먼저 정리 (GPS, 타이머, UI, localStorage 모두 처리)
   if (myName) leaveRace(true);
-  // Firebase 전체 삭제
-  db.ref('members').remove()
+  groupRef('members').remove()
     .then(() => alert('참가자 정보가 초기화되었습니다.'))
     .catch(err => alert('초기화 실패: ' + err.message));
 }
-
 
 function createIcon(color, initial, name) {
   const label = initial || (name ? name[0].toUpperCase() : '?');
@@ -613,12 +799,20 @@ function createIcon(color, initial, name) {
   });
 }
 
-/* ── 위치 공유 시작 ── */
-function joinRace() {
+/* ── 위치 공유 ── */
+async function joinRace() {
   const name = document.getElementById('nameInput').value.trim();
   if (!name) { showToast('이름을 입력해 주세요'); return; }
+  if (!currentGroupId) { showToast('먼저 그룹에 참가해 주세요'); return; }
   if (myName) { showToast(`이미 '${myName}'로 공유 중입니다`); return; }
   if (!navigator.geolocation) { showToast('GPS를 사용할 수 없습니다'); return; }
+
+  // 8명 제한 확인
+  const snap = await groupRef('members').once('value');
+  const members = snap.val() || {};
+  if (Object.keys(members).length >= 8 && !members[myUUID]) {
+    showToast('⚠️ 위치 공유 인원이 가득 찼습니다 (최대 8명)', 4000); return;
+  }
 
   if (navigator.permissions) {
     navigator.permissions.query({ name: 'geolocation' }).then(r => {
@@ -639,8 +833,7 @@ function requestGPS(name) {
     myName = name;
     localStorage.setItem('trackerName', name);
     localStorage.setItem('trackerColor', selectedColor);
-    // Firebase 키: UUID (이름 아님)
-    db.ref(`members/${myUUID}`).set({
+    groupRef(`members/${myUUID}`).set({
       name, lat: pos.coords.latitude, lng: pos.coords.longitude,
       color: selectedColor, initial: name[0].toUpperCase(), updatedAt: Date.now()
     });
@@ -661,8 +854,8 @@ function requestGPS(name) {
 function startWatch() {
   if (myWatchId !== null) navigator.geolocation.clearWatch(myWatchId);
   myWatchId = navigator.geolocation.watchPosition(pos => {
-    if (!myName) return;
-    db.ref(`members/${myUUID}`).set({
+    if (!myName || !currentGroupId) return;
+    groupRef(`members/${myUUID}`).set({
       name: myName, lat: pos.coords.latitude, lng: pos.coords.longitude,
       color: selectedColor, initial: myName[0].toUpperCase(), updatedAt: Date.now()
     });
@@ -671,15 +864,15 @@ function startWatch() {
 
 function startCountdown() {
   if (countdownTimer) clearInterval(countdownTimer);
-  let sec = parseInt(document.getElementById('refreshSec').value) || 5;
+  let sec = parseInt(document.getElementById('refreshSec').value) || 3;
   let remain = sec;
   countdownTimer = setInterval(() => {
     remain--;
     document.getElementById('countdown').textContent = `다음 강제 갱신 ${remain}초 후`;
     if (remain <= 0) {
       remain = sec;
-      if (myName) navigator.geolocation.getCurrentPosition(pos => {
-        db.ref(`members/${myUUID}`).set({
+      if (myName && currentGroupId) navigator.geolocation.getCurrentPosition(pos => {
+        groupRef(`members/${myUUID}`).set({
           name: myName, lat: pos.coords.latitude, lng: pos.coords.longitude,
           color: selectedColor, initial: myName[0].toUpperCase(), updatedAt: Date.now()
         });
@@ -690,7 +883,7 @@ function startCountdown() {
 
 function leaveRace(silent = false) {
   if (!myName) return;
-  db.ref(`members/${myUUID}`).remove();
+  if (currentGroupId) groupRef(`members/${myUUID}`).remove();
   if (myWatchId !== null) { navigator.geolocation.clearWatch(myWatchId); myWatchId = null; }
   if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
   document.getElementById('countdown').textContent = '';
@@ -704,36 +897,7 @@ function leaveRace(silent = false) {
   myName = null;
 }
 
-/* ── Firebase 실시간 수신 ── */
-db.ref('members').on('value', snap => {
-  lastData = snap.val() || {};
-  // 사라진 마커 제거
-  Object.keys(markers).forEach(uuid => { if (!lastData[uuid]) { map.removeLayer(markers[uuid]); delete markers[uuid]; } });
-  // 마커 추가/갱신 (키=UUID, 표시명=m.name)
-  Object.entries(lastData).forEach(([uuid, m]) => {
-    const displayName = m.name || uuid;
-    if (markers[uuid]) {
-      markers[uuid].setLatLng([m.lat, m.lng]);
-      markers[uuid].setPopupContent(makePopup(displayName, m));
-    } else {
-      markers[uuid] = L.marker([m.lat, m.lng], { icon: createIcon(m.color, m.initial, displayName) })
-        .addTo(map).bindPopup(makePopup(displayName, m));
-    }
-  });
-  document.getElementById('memberCount').textContent = `${Object.keys(lastData).length}명`;
-  renderList();
-  updateElevationMarkers();
-});
-
 setInterval(renderList, 5000);
-
-// 내 노드가 외부(참가자 초기화 등)에 의해 삭제되면 자동으로 공유 종료
-db.ref(`members/${myUUID}`).on('value', snap => {
-  if (!snap.val() && myName) {
-    leaveRace(true);
-    showToast('⚠️ 참가자가 초기화되어 위치 공유가 종료되었습니다.', 4000);
-  }
-});
 
 function makePopup(name, m) {
   const sec = Math.round((Date.now() - m.updatedAt) / 1000);
@@ -775,7 +939,7 @@ function renderList() {
 
 function focusMember(lat, lng) { map.flyTo([lat, lng], 15); closeSidebar(); }
 
-/* ── 현재 위치 이동 ── */
+/* ── 현재 위치 ── */
 let myLocMarker = null;
 function goToMyLocation() {
   navigator.geolocation.getCurrentPosition(pos => {
@@ -793,6 +957,7 @@ function goToMyLocation() {
 let gpxLine = null, gpxS = null, gpxE = null;
 
 function uploadGPX(event) {
+  if (!currentGroupId) { showToast('먼저 그룹에 참가해 주세요'); return; }
   const file = event.target.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
@@ -803,48 +968,29 @@ function uploadGPX(event) {
       ele: parseFloat(p.querySelector('ele')?.textContent) || 0
     })).filter(p => !isNaN(p.lat));
     if (!pts.length) { showToast('GPX 좌표를 찾을 수 없습니다'); return; }
-    db.ref('route').set({ points: pts, name: file.name, uploadedAt: Date.now() });
+    groupRef('route').set({ points: pts, name: file.name, uploadedAt: Date.now() });
     showToast(`✅ ${file.name} 공유 완료 (${pts.length}개 좌표)`);
     document.getElementById('gpxInput').value = '';
   };
   reader.readAsText(file);
 }
 
-function deleteGPX() { db.ref('route').remove(); showToast('경로가 삭제되었습니다'); }
-
-function setGpxUI(hasRoute) {
-  document.getElementById('gpxLabel').style.display    = hasRoute ? 'none'  : 'flex';
-  document.getElementById('deleteGpxBtn').style.display = hasRoute ? 'block' : 'none';
+function deleteGPX() {
+  if (currentGroupId) groupRef('route').remove();
+  showToast('경로가 삭제되었습니다');
 }
 
-db.ref('route').on('value', snap => {
-  if (gpxLine) { map.removeLayer(gpxLine); gpxLine = null; }
-  if (gpxS)    { map.removeLayer(gpxS);    gpxS = null; }
-  if (gpxE)    { map.removeLayer(gpxE);    gpxE = null; }
-  const data = snap.val();
-  if (!data?.points?.length) {
-    setGpxUI(false);
-    gpxRoutePoints = []; gpxCumDist = []; gpxTotalDist = 0;
-    if (elevVisible) toggleElevation();
-    return;
-  }
-  buildRouteData(data.points);
-  const ll = data.points.map(p => [p.lat, p.lng]);
-  gpxLine = L.polyline(ll, { color:'#f39c12', weight:3, opacity:.9 }).addTo(map);
-  const mk = html => L.divIcon({ className:'', iconSize:[16,16], iconAnchor:[8,8], html });
-  gpxS = L.marker(ll[0], { icon: mk('<div style="background:#2ecc71;color:#fff;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;border:2px solid #fff">S</div>') }).addTo(map).bindPopup('🏁 출발');
-  gpxE = L.marker(ll[ll.length-1], { icon: mk('<div style="background:#e94560;color:#fff;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;border:2px solid #fff">F</div>') }).addTo(map).bindPopup('🏆 도착');
-  setGpxUI(true);
-  map.fitBounds(gpxLine.getBounds(), { padding:[30,30] });
-});
+function setGpxUI(hasRoute) {
+  document.getElementById('gpxLabel').style.display     = hasRoute ? 'none'  : 'flex';
+  document.getElementById('deleteGpxBtn').style.display = hasRoute ? 'block' : 'none';
+}
 
 /* ── 사이드바 ── */
 function toggleSidebar() {
   const sb = document.getElementById('sidebar'), ov = document.getElementById('overlay');
   const isOpen = sb.classList.toggle('open');
   if (isOpen) {
-    ov.style.display = 'block';
-    ov.style.pointerEvents = 'auto';
+    ov.style.display = 'block'; ov.style.pointerEvents = 'auto';
     document.body.classList.add('sidebar-open');
   } else {
     closeSidebar();
@@ -854,13 +1000,10 @@ function closeSidebar() {
   document.getElementById('sidebar').classList.remove('open');
   document.body.classList.remove('sidebar-open');
   const ov = document.getElementById('overlay');
-  ov.style.display = 'none';
-  ov.style.pointerEvents = 'none';
-  // 사이드바 닫힌 후 지도 터치/크기 재활성화
+  ov.style.display = 'none'; ov.style.pointerEvents = 'none';
   setTimeout(() => map.invalidateSize(), 300);
 }
 map.on('click', closeSidebar);
-
 
 /* ── 토스트 ── */
 let toastTimer;
