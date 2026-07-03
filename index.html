@@ -44,6 +44,15 @@
     }
     .lobby-divider::before { left: 0; }
     .lobby-divider::after  { right: 0; }
+    .lobby-stats {
+      display: flex; gap: 8px; justify-content: center; margin-bottom: 2px;
+    }
+    .lobby-stat-item {
+      flex: 1; background: #0f3460; border-radius: 8px;
+      padding: 8px 6px; text-align: center;
+    }
+    .lobby-stat-num { font-size: 20px; font-weight: 700; color: #f39c12; }
+    .lobby-stat-label { font-size: 10px; color: #888; margin-top: 2px; }
 
     header {
       background: #16213e; padding: 10px 14px;
@@ -264,8 +273,18 @@
 <div id="lobby" class="lobby-overlay">
   <div class="lobby-box">
     <div class="lobby-title">🏃 Trail Tracker</div>
-    <div class="lobby-ver">v0.15</div>
+    <div class="lobby-ver">v0.16</div>
     <div class="lobby-sub">그룹을 만들거나 초대 코드로 참가하세요</div>
+    <div class="lobby-stats">
+      <div class="lobby-stat-item">
+        <div class="lobby-stat-num" id="statGroups">-</div>
+        <div class="lobby-stat-label">활성 그룹</div>
+      </div>
+      <div class="lobby-stat-item">
+        <div class="lobby-stat-num" id="statMembers">-</div>
+        <div class="lobby-stat-label">참가자</div>
+      </div>
+    </div>
     <input type="text" id="groupNameInput" placeholder="그룹 이름 (예: 수성20K 팀A)" maxlength="20" />
     <button class="btn btn-primary" onclick="createGroup()" style="margin-top:0">✚ 그룹 만들기</button>
     <div class="lobby-divider">또는</div>
@@ -278,7 +297,7 @@
 
 <header>
   <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.15</span></h1>
+  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.16</span></h1>
   <span class="badge" id="memberCount" onclick="resetMembers()">0명</span>
   <span class="group-badge" id="groupBadge" style="display:none"></span>
   <span class="fb-status status-wait" id="fbStatus">⚪ 연결 중</span>
@@ -735,6 +754,20 @@ function startGroupListeners() {
 let myName = null, myWatchId = null, countdownTimer = null;
 const markers = {};
 let lastData = {};
+
+/* ── 로비 실시간 통계 ── */
+db.ref('groups').on('value', snap => {
+  const groups = snap.val() || {};
+  const groupIds = Object.keys(groups);
+  const groupCount = groupIds.length;
+  let memberCount = 0;
+  groupIds.forEach(gid => {
+    const members = groups[gid].members || {};
+    memberCount += Object.keys(members).length;
+  });
+  document.getElementById('statGroups').textContent = groupCount;
+  document.getElementById('statMembers').textContent = memberCount;
+});
 
 /* ── 페이지 로드 ── */
 window.addEventListener('load', () => {
