@@ -273,7 +273,7 @@
 <div id="lobby" class="lobby-overlay">
   <div class="lobby-box">
     <div class="lobby-title">🏃 Trail Tracker</div>
-    <div class="lobby-ver">v0.17</div>
+    <div class="lobby-ver">v0.18</div>
     <div class="lobby-sub">그룹을 만들거나 초대 코드로 참가하세요</div>
     <div class="lobby-stats">
       <div class="lobby-stat-item">
@@ -324,7 +324,7 @@
 
 <header>
   <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.17</span></h1>
+  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.18</span></h1>
   <span class="badge" id="memberCount" onclick="resetMembers()">0명</span>
   <span class="group-badge" id="groupBadge" style="display:none"></span>
   <span class="fb-status status-wait" id="fbStatus">⚪ 연결 중</span>
@@ -397,10 +397,18 @@
   <!-- 지도 위 버튼 오버레이 -->
   <div class="map-type-overlay">
     <div class="mto-btn" id="elevBtn" onclick="toggleElevation()" title="고도 프로필">📈</div>
+    <div class="mto-btn" id="statusBtn" onclick="toggleStatusPanel()" title="상태 설정">😊</div>
     <div class="mto-btn active" data-map="street" onclick="setMapType('street')">일반</div>
     <div class="mto-btn" data-map="satellite" onclick="setMapType('satellite')">위성</div>
     <div class="mto-btn" data-map="topo" onclick="setMapType('topo')">지형</div>
     <div class="mto-btn mto-loc" onclick="goToMyLocation()" title="현재 위치">📍</div>
+  </div>
+
+  <!-- 상태 선택 패널 -->
+  <div id="statusPanel" style="display:none;position:absolute;top:48px;right:10px;z-index:400;background:rgba(22,33,62,.97);border:1px solid #0f3460;border-radius:10px;padding:10px;backdrop-filter:blur(4px);">
+    <div style="font-size:10px;color:#e94560;font-weight:700;text-align:center;margin-bottom:8px;letter-spacing:1px;">내 상태 설정</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;width:160px;" id="statusGrid"></div>
+    <button onclick="clearStatus()" style="width:100%;margin-top:8px;padding:5px;background:none;border:1px solid #333;border-radius:6px;color:#555;font-size:11px;cursor:pointer;">상태 해제</button>
   </div>
 
   <!-- 고도 프로필 패널 -->
@@ -975,7 +983,10 @@ function makePopup(name, m) {
         `</small>`;
     }
   }
-  return `<b style="color:${m.color}">${name}</b><br>위도 ${m.lat.toFixed(5)}<br>경도 ${m.lng.toFixed(5)}<br><small>🕐 ${ago} 갱신</small>${routeHtml}`;
+  const statusHtml = m.status
+    ? `<div style="margin:4px 0;padding:4px 8px;background:#0f3460;border-radius:6px;font-size:13px;text-align:center;">${m.status}</div>`
+    : '';
+  return `<b style="color:${m.color}">${name}</b><br>위도 ${m.lat.toFixed(5)}<br>경도 ${m.lng.toFixed(5)}<br>${statusHtml}<small>🕐 ${ago} 갱신</small>${routeHtml}`;
 }
 
 function renderList() {
@@ -1064,6 +1075,68 @@ function closeSidebar() {
   setTimeout(() => map.invalidateSize(), 300);
 }
 map.on('click', closeSidebar);
+
+/* ── 상태 ── */
+const STATUS_OPTIONS = [
+  { emoji: '⏳', label: '기다려' },
+  { emoji: '😫', label: '힘들어' },
+  { emoji: '🆘', label: '도와줘' },
+  { emoji: '⏸', label: '대기중' },
+  { emoji: '💪', label: '화이팅' },
+  { emoji: '🥤', label: '보급중' },
+];
+
+let myStatus = null;
+
+// 상태 버튼 렌더
+document.getElementById('statusGrid').innerHTML = STATUS_OPTIONS.map(s =>
+  `<button onclick="setStatus('${s.emoji} ${s.label}')"
+    style="padding:7px 4px;background:#0f3460;border:1px solid #1a4a8a;border-radius:7px;color:#eee;font-size:12px;cursor:pointer;text-align:center;transition:background .15s;"
+    onmouseover="this.style.background='#1a4a8a'" onmouseout="this.style.background=myStatus==='${s.emoji} ${s.label}'?'#e94560':'#0f3460'"
+    id="sbtn_${s.label}">
+    ${s.emoji}<br><span style="font-size:10px">${s.label}</span>
+  </button>`
+).join('');
+
+function toggleStatusPanel() {
+  if (!myName) { showToast('위치 공유 시작 후 이용할 수 있습니다'); return; }
+  const p = document.getElementById('statusPanel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+
+function setStatus(status) {
+  myStatus = status;
+  if (!currentGroupId || !myName) return;
+  groupRef(`members/${myUUID}/status`).set(status);
+  // 버튼 하이라이트
+  document.querySelectorAll('#statusGrid button').forEach(b => b.style.background = '#0f3460');
+  STATUS_OPTIONS.forEach(s => {
+    if (`${s.emoji} ${s.label}` === status) {
+      const btn = document.getElementById(`sbtn_${s.label}`);
+      if (btn) btn.style.background = '#e94560';
+    }
+  });
+  document.getElementById('statusBtn').textContent = status.split(' ')[0];
+  document.getElementById('statusPanel').style.display = 'none';
+  showToast(`상태: ${status}`);
+}
+
+function clearStatus() {
+  myStatus = null;
+  if (currentGroupId && myName) groupRef(`members/${myUUID}/status`).remove();
+  document.querySelectorAll('#statusGrid button').forEach(b => b.style.background = '#0f3460');
+  document.getElementById('statusBtn').textContent = '😊';
+  document.getElementById('statusPanel').style.display = 'none';
+}
+
+// 패널 외부 클릭 시 닫기
+document.addEventListener('click', e => {
+  const panel = document.getElementById('statusPanel');
+  const btn   = document.getElementById('statusBtn');
+  if (panel && !panel.contains(e.target) && e.target !== btn) {
+    panel.style.display = 'none';
+  }
+});
 
 /* ── 관리자 ── */
 function adminPrompt() {
