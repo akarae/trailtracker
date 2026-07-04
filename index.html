@@ -842,7 +842,8 @@ document.addEventListener('visibilitychange', () => {
       groupRef(`members/${myUUID}`).set({
         name: myName, lat: pos.coords.latitude,
         lng: pos.coords.longitude, color: selectedColor,
-        initial: myName[0].toUpperCase(), updatedAt: Date.now()
+        initial: myName[0].toUpperCase(), updatedAt: Date.now(),
+        ...(myStatus && { status: myStatus })
       });
     }, null, { enableHighAccuracy: true, timeout: 10000 });
   }
@@ -903,7 +904,8 @@ function requestGPS(name) {
     localStorage.setItem('trackerColor', selectedColor);
     groupRef(`members/${myUUID}`).set({
       name, lat: pos.coords.latitude, lng: pos.coords.longitude,
-      color: selectedColor, initial: name[0].toUpperCase(), updatedAt: Date.now()
+      color: selectedColor, initial: name[0].toUpperCase(), updatedAt: Date.now(),
+      ...(myStatus && { status: myStatus })
     });
     startWatch();
     startCountdown();
@@ -925,7 +927,8 @@ function startWatch() {
     if (!myName || !currentGroupId) return;
     groupRef(`members/${myUUID}`).set({
       name: myName, lat: pos.coords.latitude, lng: pos.coords.longitude,
-      color: selectedColor, initial: myName[0].toUpperCase(), updatedAt: Date.now()
+      color: selectedColor, initial: myName[0].toUpperCase(), updatedAt: Date.now(),
+      ...(myStatus && { status: myStatus })
     });
   }, null, { enableHighAccuracy: true, maximumAge: 10000 });
 }
@@ -942,7 +945,8 @@ function startCountdown() {
       if (myName && currentGroupId) navigator.geolocation.getCurrentPosition(pos => {
         groupRef(`members/${myUUID}`).set({
           name: myName, lat: pos.coords.latitude, lng: pos.coords.longitude,
-          color: selectedColor, initial: myName[0].toUpperCase(), updatedAt: Date.now()
+          color: selectedColor, initial: myName[0].toUpperCase(), updatedAt: Date.now(),
+          ...(myStatus && { status: myStatus })
         });
       }, null, { enableHighAccuracy: true });
     }
@@ -983,8 +987,8 @@ function makePopup(name, m) {
         `</small>`;
     }
   }
-  const statusHtml = m.status ? `${m.status}<br>` : '';
-  return `<b style="color:${m.color}">${name}</b><br>위도 ${m.lat.toFixed(5)}<br>경도 ${m.lng.toFixed(5)}<br>${statusHtml}<small>🕐 ${ago} 갱신</small>${routeHtml}`;
+  const statusHtml = m.status ? `<b>${m.status}</b><br>` : '';
+  return `<b style="color:${m.color}">${name}</b><br>${statusHtml}위도 ${m.lat.toFixed(5)}<br>경도 ${m.lng.toFixed(5)}<br><small>🕐 ${ago} 갱신</small>${routeHtml}`;
 }
 
 function renderList() {
