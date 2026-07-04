@@ -1142,27 +1142,31 @@ document.addEventListener('click', e => {
 
 /* ── 관리자 ── */
 function adminPrompt() {
-  // 비밀번호 입력 다이얼로그 (password 타입)
   const overlay = document.createElement('div');
+  overlay.id = 'adminPwOverlay';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;';
   overlay.innerHTML = `
     <div style="background:#16213e;border:1px solid #0f3460;border-radius:12px;padding:24px 20px;width:280px;display:flex;flex-direction:column;gap:10px;">
       <div style="font-size:14px;font-weight:700;color:#eee;text-align:center;">🔒 관리자 인증</div>
       <input type="password" id="adminPwInput" placeholder="비밀번호 입력"
         style="background:#0f3460;border:1px solid #1a4a8a;border-radius:6px;color:#eee;padding:8px 10px;font-size:14px;outline:none;text-align:center;"
-        onkeydown="if(event.key==='Enter')document.getElementById('adminPwConfirm').click()" />
+        onkeydown="if(event.key==='Enter') confirmAdminPw()" />
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <button onclick="this.closest('div[style]').parentElement.remove()"
+        <button onclick="document.getElementById('adminPwOverlay').remove()"
           style="padding:8px;background:#0f3460;border:1px solid #1a4a8a;border-radius:6px;color:#aaa;font-size:12px;cursor:pointer;">취소</button>
-        <button id="adminPwConfirm" onclick="
-          const pw=document.getElementById('adminPwInput').value;
-          this.closest('div[style]').parentElement.remove();
-          if(pw==='eugene'){openAdmin();}else{showToast('⚠️ 비밀번호가 틀렸습니다');}
-        " style="padding:8px;background:#e94560;border:none;border-radius:6px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">확인</button>
+        <button onclick="confirmAdminPw()"
+          style="padding:8px;background:#e94560;border:none;border-radius:6px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">확인</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
   setTimeout(() => document.getElementById('adminPwInput')?.focus(), 50);
+}
+
+function confirmAdminPw() {
+  const pw = document.getElementById('adminPwInput')?.value;
+  document.getElementById('adminPwOverlay')?.remove();
+  if (pw === 'eugene') openAdmin();
+  else showToast('⚠️ 비밀번호가 틀렸습니다');
 }
 
 function openAdmin() {
