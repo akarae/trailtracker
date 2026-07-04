@@ -987,7 +987,7 @@ function makePopup(name, m) {
         `</small>`;
     }
   }
-  const statusHtml = m.status ? `<b>${m.status}</b><br>` : '';
+  const statusHtml = m.status ? `<span style="display:inline-block;margin:5px 0 4px;"><b>${m.status}</b></span><br>` : '';
   return `<b style="color:${m.color}">${name}</b><br>${statusHtml}위도 ${m.lat.toFixed(5)}<br>경도 ${m.lng.toFixed(5)}<br><small>🕐 ${ago} 갱신</small>${routeHtml}`;
 }
 
