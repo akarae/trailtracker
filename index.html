@@ -325,7 +325,7 @@
 <header>
   <button class="menu-btn" onclick="toggleSidebar()">☰</button>
   <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.18</span></h1>
-  <span class="badge" id="memberCount" onclick="resetMembers()">0명</span>
+  <span class="badge" id="memberCount">0명</span>
   <span class="group-badge" id="groupBadge" style="display:none"></span>
   <span class="fb-status status-wait" id="fbStatus">⚪ 연결 중</span>
 </header>
@@ -344,7 +344,10 @@
           <span class="group-code" id="groupCodeDisplay"></span>
           <button class="btn btn-secondary" style="margin-top:0;width:auto;padding:4px 8px;font-size:11px" onclick="copyGroupUrl()">🔗 초대 링크</button>
         </div>
-        <button class="btn btn-red" style="margin-top:0;font-size:11px;padding:6px" onclick="deleteGroup()">🗑 그룹 종료</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:0">
+          <button class="btn btn-red" style="margin-top:0;font-size:11px;padding:6px" onclick="deleteGroup()">🗑 그룹 종료</button>
+          <button class="btn btn-secondary" style="margin-top:0;font-size:11px;padding:6px" onclick="resetMembers()">👥 참가자 초기화</button>
+        </div>
       </div>
 
       <!-- GPX -->
@@ -620,6 +623,15 @@ function pickColor(c, el) {
   el.classList.add('selected');
   document.getElementById('colorPreview').style.background = c;
   document.getElementById('colorRow').style.display = 'none';
+
+  // 공유 중이면 Firebase + 마커 즉시 반영
+  if (myName && currentGroupId) {
+    groupRef(`members/${myUUID}/color`).set(c);
+    if (markers[myUUID]) {
+      markers[myUUID].setIcon(createIcon(c, myName[0].toUpperCase(), myName));
+    }
+    localStorage.setItem('trackerColor', c);
+  }
 }
 
 /* ── UUID ── */
