@@ -113,7 +113,7 @@
       }
       .sidebar.open { transform: translateX(0); box-shadow: 4px 0 20px rgba(0,0,0,.6); }
       #customScale { left: 10px; }
-      #elevPanel { left: 0; }
+      #elevPanel { left: 0; top: 52px; }
     }
     .overlay {
       display: none; position: absolute; inset: 0;
@@ -192,9 +192,9 @@
     /* 고도 프로필 패널 */
     #elevPanel {
       display: none; position: absolute;
-      top: 0; left: 268px; right: 0; height: 190px;
+      top: 52px; left: 268px; right: 0; height: 190px;
       z-index: 200; background: rgba(14,22,46,.97);
-      border-bottom: 2px solid #0f3460;
+      border: 1px solid #0f3460; border-radius: 0 0 10px 10px;
       flex-direction: column; padding: 6px 12px 8px;
     }
     #elevPanel.show { display: flex; }
