@@ -273,7 +273,7 @@
 <div id="lobby" class="lobby-overlay">
   <div class="lobby-box">
     <div class="lobby-title">🏃 Trail Tracker</div>
-    <div class="lobby-ver">v0.18</div>
+    <div class="lobby-ver">v0.19</div>
     <div class="lobby-sub">그룹을 만들거나 초대 코드로 참가하세요</div>
     <div class="lobby-stats">
       <div class="lobby-stat-item">
@@ -324,7 +324,7 @@
 
 <header>
   <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.18</span></h1>
+  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.19</span></h1>
   <span class="badge" id="memberCount">0명</span>
   <span class="group-badge" id="groupBadge" style="display:none"></span>
   <span class="fb-status status-wait" id="fbStatus">⚪ 연결 중</span>
@@ -772,6 +772,7 @@ function startGroupListeners() {
       const displayName = m.name || uuid;
       if (markers[uuid]) {
         markers[uuid].setLatLng([m.lat, m.lng]);
+        markers[uuid].setIcon(createIcon(m.color, m.initial, displayName));
         markers[uuid].setPopupContent(makePopup(displayName, m));
       } else {
         markers[uuid] = L.marker([m.lat, m.lng], { icon: createIcon(m.color, m.initial, displayName) })
