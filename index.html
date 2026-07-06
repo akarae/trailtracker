@@ -521,13 +521,37 @@ function renderElevationChart() {
   const participantDatasets = Object.entries(lastData).map(([uuid, m]) => {
     const pos = findRoutePosition(m.lat, m.lng);
     if (!pos) return null;
+    const initial = (m.name || uuid)[0].toUpperCase();
     return {
       type: 'scatter', label: m.name || uuid,
       data: [{ x: pos.distFromStart, y: hasEle ? pos.ele : 0 }],
       backgroundColor: m.color, borderColor: '#fff', borderWidth: 2,
-      pointRadius: 8, pointHoverRadius: 10, order: 0
+      pointRadius: 10, pointHoverRadius: 12, order: 0,
+      initial  // 커스텀 속성
     };
   }).filter(Boolean);
+
+  // 마커 위에 이름 첫글자 그리는 플러그인
+  const initialLabelPlugin = {
+    id: 'initialLabel',
+    afterDraw(chart) {
+      const ctx = chart.ctx;
+      chart.data.datasets.forEach((ds, dsIdx) => {
+        if (!ds.initial) return;
+        const meta = chart.getDatasetMeta(dsIdx);
+        meta.data.forEach(point => {
+          ctx.save();
+          ctx.font = 'bold 10px sans-serif';
+          ctx.fillStyle = '#fff';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(ds.initial, point.x, point.y);
+          ctx.restore();
+        });
+      });
+    }
+  };
+
   elevChart = new Chart(canvas.getContext('2d'), {
     type: 'line',
     data: {
@@ -558,7 +582,8 @@ function renderElevationChart() {
         y: { display: hasEle, grid: { color: 'rgba(255,255,255,0.05)' },
           ticks: { color: '#888', maxTicksLimit: 4, callback: v => `${v}m` } }
       }
-    }
+    },
+    plugins: [initialLabelPlugin]
   });
 }
 
