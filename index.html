@@ -273,7 +273,7 @@
 <div id="lobby" class="lobby-overlay">
   <div class="lobby-box">
     <div class="lobby-title">🏃 Trail Tracker</div>
-    <div class="lobby-ver">v0.19</div>
+    <div class="lobby-ver">v0.20</div>
     <div class="lobby-sub">그룹을 만들거나 초대 코드로 참가하세요</div>
     <div class="lobby-stats">
       <div class="lobby-stat-item">
@@ -324,7 +324,7 @@
 
 <header>
   <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.19</span></h1>
+  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.20</span></h1>
   <span class="badge" id="memberCount">0명</span>
   <span class="group-badge" id="groupBadge" style="display:none"></span>
   <span class="fb-status status-wait" id="fbStatus">⚪ 연결 중</span>
@@ -1067,23 +1067,57 @@ function goToMyLocation() {
 /* ── GPX ── */
 let gpxLine = null, gpxS = null, gpxE = null;
 
+function parseGPXPoints(text) {
+  // 1차 시도: DOMParser (text/xml - 더 넓은 호환성)
+  try {
+    const doc = new DOMParser().parseFromString(text, 'text/xml');
+    if (!doc.querySelector('parsererror')) {
+      // namespace 포함/미포함 모두 탐색
+      const nodes = [...doc.getElementsByTagNameNS('*','trkpt'),
+                     ...doc.getElementsByTagNameNS('*','rtept')];
+      const bySelector = [...doc.querySelectorAll('trkpt,rtept')];
+      const all = nodes.length >= bySelector.length ? nodes : bySelector;
+      if (all.length > 0) {
+        const pts = all.map(p => ({
+          lat: parseFloat(p.getAttribute('lat')),
+          lng: parseFloat(p.getAttribute('lon')),
+          ele: parseFloat(p.getElementsByTagName('ele')[0]?.textContent ||
+                          p.getElementsByTagNameNS('*','ele')[0]?.textContent) || 0
+        })).filter(p => !isNaN(p.lat) && !isNaN(p.lng));
+        if (pts.length > 0) return pts;
+      }
+    }
+  } catch(e) {}
+
+  // 2차 시도: 정규식 fallback (어떤 브라우저에서도 동작)
+  const pts = [];
+  const blockRe = /<(?:trkpt|rtept)([\s\S]*?)<\/(?:trkpt|rtept)>/g;
+  const eleRe   = /<ele>([\d.+-]+)<\/ele>/;
+  let m;
+  while ((m = blockRe.exec(text)) !== null) {
+    const block  = m[0];
+    const latM   = block.match(/\blat=["']([\d.+-]+)["']/);
+    const lonM   = block.match(/\blon=["']([\d.+-]+)["']/);
+    const eleM   = block.match(eleRe);
+    if (!latM || !lonM) continue;
+    const lat = parseFloat(latM[1]), lng = parseFloat(lonM[1]);
+    if (!isNaN(lat) && !isNaN(lng)) pts.push({ lat, lng, ele: eleM ? parseFloat(eleM[1]) : 0 });
+  }
+  return pts;
+}
+
 function uploadGPX(event) {
   if (!currentGroupId) { showToast('먼저 그룹에 참가해 주세요'); return; }
   const file = event.target.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    const doc = new DOMParser().parseFromString(e.target.result, 'application/xml');
-    const pts = [...doc.querySelectorAll('trkpt,rtept')].map(p => ({
-      lat: parseFloat(p.getAttribute('lat')),
-      lng: parseFloat(p.getAttribute('lon')),
-      ele: parseFloat(p.querySelector('ele')?.textContent) || 0
-    })).filter(p => !isNaN(p.lat));
+    const pts = parseGPXPoints(e.target.result);
     if (!pts.length) { showToast('GPX 좌표를 찾을 수 없습니다'); return; }
     groupRef('route').set({ points: pts, name: file.name, uploadedAt: Date.now() });
     showToast(`✅ ${file.name} 공유 완료 (${pts.length}개 좌표)`);
     document.getElementById('gpxInput').value = '';
   };
-  reader.readAsText(file);
+  reader.readAsText(file, 'UTF-8');
 }
 
 function deleteGPX() {
