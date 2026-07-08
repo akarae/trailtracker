@@ -273,7 +273,7 @@
 <div id="lobby" class="lobby-overlay">
   <div class="lobby-box">
     <div class="lobby-title">🏃 Trail Tracker</div>
-    <div class="lobby-ver">v0.20</div>
+    <div class="lobby-ver">v0.21</div>
     <div class="lobby-sub">그룹을 만들거나 초대 코드로 참가하세요</div>
     <div class="lobby-stats">
       <div class="lobby-stat-item">
@@ -324,7 +324,7 @@
 
 <header>
   <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.20</span></h1>
+  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.21</span></h1>
   <span class="badge" id="memberCount">0명</span>
   <span class="group-badge" id="groupBadge" style="display:none"></span>
   <span class="fb-status status-wait" id="fbStatus">⚪ 연결 중</span>
@@ -352,7 +352,7 @@
 
       <!-- GPX -->
       <div class="section">
-        <label for="gpxInput" class="file-btn" id="gpxLabel">📂 GPX 파일 업로드</label>
+        <label for="gpxInput" class="file-btn" id="gpxLabel" onclick="checkInAppBrowser(event)">📂 GPX 파일 업로드</label>
         <button class="btn btn-secondary" id="deleteGpxBtn" style="display:none;margin-top:0" onclick="deleteGPX()">🗑 경로 삭제</button>
         <input type="file" id="gpxInput" accept=".gpx" onchange="uploadGPX(event)" />
       </div>
@@ -1062,6 +1062,50 @@ function goToMyLocation() {
     }).addTo(map).bindPopup('📍 현재 위치').openPopup();
     map.flyTo([lat, lng], 15);
   }, () => showToast('현재 위치를 가져올 수 없습니다'), { enableHighAccuracy: true, timeout: 8000 });
+}
+
+/* ── 인앱 브라우저 감지 ── */
+function isInAppBrowser() {
+  const ua = navigator.userAgent || '';
+  return /NAVER|NaverApp|Daum|KakaoTalk|Instagram|FBAN|FBAV|Line\/|Twitter/i.test(ua);
+}
+function checkInAppBrowser(e) {
+  if (!isInAppBrowser()) return;
+  e.preventDefault();
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `
+    <div style="background:#16213e;border:1px solid #0f3460;border-radius:14px;padding:24px 20px;max-width:300px;width:88%;text-align:center;">
+      <div style="font-size:28px;margin-bottom:8px;">🌐</div>
+      <div style="font-weight:700;font-size:15px;margin-bottom:8px;">외부 브라우저 필요</div>
+      <div style="font-size:13px;color:#aaa;line-height:1.6;margin-bottom:18px;">
+        현재 앱 내 브라우저에서는<br>파일 업로드가 지원되지 않아요.<br><br>
+        Chrome 또는 삼성 인터넷으로<br>열어주세요.
+      </div>
+      <button onclick="openInChrome()" style="width:100%;padding:10px;background:#e94560;border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;">Chrome으로 열기</button>
+      <button onclick="copyCurrentUrl()" style="width:100%;padding:10px;background:#0f3460;border:none;border-radius:8px;color:#fff;font-size:14px;cursor:pointer;margin-bottom:8px;">🔗 링크 복사</button>
+      <button onclick="this.closest('div[style*=position]').remove()" style="width:100%;padding:8px;background:transparent;border:1px solid #333;border-radius:8px;color:#888;font-size:13px;cursor:pointer;">닫기</button>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+function openInChrome() {
+  const url = location.href;
+  const intent = `intent://${url.replace(/^https?:\/\//,'')}#Intent;scheme=https;package=com.android.chrome;end`;
+  window.location.href = intent;
+  setTimeout(() => { window.open(url, '_blank'); }, 1500);
+}
+function copyCurrentUrl() {
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = location.href; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('🔗 링크 복사됨 — Chrome에 붙여넣기 해주세요!', 3000);
+  };
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(location.href)
+      .then(() => showToast('🔗 링크 복사됨 — Chrome에 붙여넣기 해주세요!', 3000))
+      .catch(fallback);
+  } else { fallback(); }
 }
 
 /* ── GPX ── */
