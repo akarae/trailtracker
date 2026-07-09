@@ -273,7 +273,7 @@
 <div id="lobby" class="lobby-overlay">
   <div class="lobby-box">
     <div class="lobby-title">🏃 Trail Tracker</div>
-    <div class="lobby-ver">v0.21</div>
+    <div class="lobby-ver">v0.22</div>
     <div class="lobby-sub">그룹을 만들거나 초대 코드로 참가하세요</div>
     <div class="lobby-stats">
       <div class="lobby-stat-item">
@@ -324,7 +324,7 @@
 
 <header>
   <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.21</span></h1>
+  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.22</span></h1>
   <span class="badge" id="memberCount">0명</span>
   <span class="group-badge" id="groupBadge" style="display:none"></span>
   <span class="fb-status status-wait" id="fbStatus">⚪ 연결 중</span>
@@ -1083,7 +1083,10 @@ function checkInAppBrowser(e) {
         Chrome 또는 삼성 인터넷으로<br>열어주세요.
       </div>
       <button onclick="openInChrome()" style="width:100%;padding:10px;background:#e94560;border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;">Chrome으로 열기</button>
-      <button onclick="copyCurrentUrl()" style="width:100%;padding:10px;background:#0f3460;border:none;border-radius:8px;color:#fff;font-size:14px;cursor:pointer;margin-bottom:8px;">🔗 링크 복사</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <button onclick="copyCurrentUrl()" style="padding:10px;background:#0f3460;border:none;border-radius:8px;color:#fff;font-size:14px;cursor:pointer;">🔗 링크 복사</button>
+        <button onclick="sendSMS()" style="padding:10px;background:#1a6b3a;border:none;border-radius:8px;color:#fff;font-size:14px;cursor:pointer;">💬 SMS 전송</button>
+      </div>
       <button onclick="this.closest('div[style*=position]').remove()" style="width:100%;padding:8px;background:transparent;border:1px solid #333;border-radius:8px;color:#888;font-size:13px;cursor:pointer;">닫기</button>
     </div>`;
   document.body.appendChild(overlay);
@@ -1106,6 +1109,10 @@ function copyCurrentUrl() {
       .then(() => showToast('🔗 링크 복사됨 — Chrome에 붙여넣기 해주세요!', 3000))
       .catch(fallback);
   } else { fallback(); }
+}
+function sendSMS() {
+  const msg = encodeURIComponent(`Trail Tracker 링크입니다:\n${location.href}`);
+  window.location.href = `sms:?body=${msg}`;
 }
 
 /* ── GPX ── */
