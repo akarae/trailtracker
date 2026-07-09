@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trail Tracker — 퀵 가이드</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e; color: #eee;
+      min-height: 100vh; padding-bottom: 48px;
+    }
+
+    /* 헤더 */
+    header {
+      background: #16213e;
+      border-bottom: 2px solid #e94560;
+      padding: 14px 20px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    header h1 { font-size: 18px; font-weight: 700; color: #e94560; }
+    header .sub { font-size: 11px; color: #555; margin-left: auto; }
+
+    /* 본문 */
+    .container { max-width: 640px; margin: 0 auto; padding: 24px 20px; }
+
+    /* 섹션 */
+    .section { margin-bottom: 32px; }
+    .section-title {
+      font-size: 13px; font-weight: 700; color: #e94560;
+      letter-spacing: .5px; text-transform: uppercase;
+      margin-bottom: 12px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .section-title::after {
+      content: ''; flex: 1; height: 1px; background: #0f3460;
+    }
+
+    /* 카드 */
+    .card {
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-bottom: 10px;
+      line-height: 1.7;
+      font-size: 14px; color: #ccc;
+    }
+    .card p + p { margin-top: 8px; }
+    .card strong { color: #eee; }
+
+    /* 스텝 */
+    .steps { display: flex; flex-direction: column; gap: 10px; }
+    .step {
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex; gap: 14px; align-items: flex-start;
+    }
+    .step-num {
+      min-width: 28px; height: 28px;
+      background: #e94560; color: #fff;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700;
+    }
+    .step-body { flex: 1; }
+    .step-title { font-size: 14px; font-weight: 700; color: #eee; margin-bottom: 4px; }
+    .step-desc  { font-size: 13px; color: #aaa; line-height: 1.6; }
+
+    /* 기능 그리드 */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 400px) { .feature-grid { grid-template-columns: 1fr; } }
+    .feature-item {
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 10px;
+      padding: 14px;
+    }
+    .feature-icon { font-size: 22px; margin-bottom: 6px; }
+    .feature-name { font-size: 13px; font-weight: 700; color: #eee; margin-bottom: 4px; }
+    .feature-desc { font-size: 12px; color: #888; line-height: 1.5; }
+
+    /* 팁 박스 */
+    .tip {
+      background: #0f1f3d;
+      border-left: 3px solid #f39c12;
+      border-radius: 0 8px 8px 0;
+      padding: 12px 14px;
+      font-size: 13px; color: #aaa; line-height: 1.6;
+      margin-top: 10px;
+    }
+    .tip strong { color: #f39c12; }
+
+    /* 푸터 */
+    footer {
+      text-align: center;
+      font-size: 11px; color: #444;
+      padding-top: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🏃 Trail Tracker</h1>
+  <span class="sub">Quick Guide</span>
+</header>
+
+<div class="container">
+
+  <!-- 개요 -->
+  <div class="section">
+    <div class="section-title">📖 개요</div>
+    <div class="card">
+      <p>Trail Tracker는 트레일 러닝 대회에서 <strong>참가자의 실시간 위치를 공유</strong>하기 위한 웹 서비스입니다.</p>
+      <p>별도 앱 설치 없이 <strong>모바일 브라우저</strong>만으로 사용할 수 있으며, GPS 위치를 그룹 내 모든 멤버와 공유합니다.</p>
+    </div>
+    <div class="tip">
+      <strong>💡 권장 브라우저</strong> — Chrome 또는 삼성 인터넷을 사용해 주세요. 네이버·카카오 등 앱 내 브라우저는 일부 기능이 제한될 수 있습니다.
+    </div>
+  </div>
+
+  <!-- 그룹 -->
+  <div class="section">
+    <div class="section-title">👥 그룹이란?</div>
+    <div class="card">
+      <p>위치 공유는 <strong>그룹 단위</strong>로 이루어집니다. 한 그룹에는 최대 <strong>8명</strong>이 참가할 수 있으며, 같은 그룹 내 멤버끼리만 서로의 위치를 볼 수 있습니다.</p>
+      <p>그룹 리더가 그룹을 생성하면 <strong>6자리 코드</strong>가 발급됩니다. 나머지 참가자는 초대 링크 또는 코드를 직접 입력해 참가합니다.</p>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">그룹 생성</div>
+          <div class="step-desc">로비에서 그룹명을 입력하고 <strong>그룹 만들기</strong>를 누릅니다. 6자리 그룹 코드가 생성됩니다.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">초대 링크 공유</div>
+          <div class="step-desc">사이드바의 <strong>🔗 초대 링크</strong> 또는 <strong>💬 SMS</strong> 버튼으로 참가자에게 링크를 전송합니다.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">그룹 참가</div>
+          <div class="step-desc">초대 링크를 열거나, 로비에서 6자리 코드를 직접 입력해 그룹에 참가합니다.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">위치 공유 시작</div>
+          <div class="step-desc">이름을 입력하고 <strong>위치 공유 시작</strong>을 누릅니다. 내 위치가 지도에 표시되고 그룹 전원에게 공유됩니다.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 주요 기능 -->
+  <div class="section">
+    <div class="section-title">⚙️ 주요 기능</div>
+    <div class="feature-grid">
+
+      <div class="feature-item">
+        <div class="feature-icon">🗺️</div>
+        <div class="feature-name">지도 유형</div>
+        <div class="feature-desc">일반 / 위성 / 지형 세 가지 지도를 상황에 맞게 전환할 수 있습니다.</div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">📂</div>
+        <div class="feature-name">GPX 경로</div>
+        <div class="feature-desc">GPX 파일을 업로드하면 경로가 지도에 표시되고, 각 참가자의 진행 거리와 남은 거리를 확인할 수 있습니다.</div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">📈</div>
+        <div class="feature-name">고도 프로필</div>
+        <div class="feature-desc">GPX 경로의 고도 변화를 그래프로 표시합니다. 참가자 위치가 그래프 위에 표시됩니다.</div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">💬</div>
+        <div class="feature-name">상태 메시지</div>
+        <div class="feature-desc">기다려 / 힘들어 / 도와줘 등 현재 상태를 선택하면 마커 팝업에 표시되어 그룹 전원이 확인할 수 있습니다.</div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">🎨</div>
+        <div class="feature-name">마커 색상</div>
+        <div class="feature-desc">내 마커 색상을 변경하면 지도 위 모든 참가자 화면에 즉시 반영됩니다.</div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">⏱️</div>
+        <div class="feature-name">갱신 주기</div>
+        <div class="feature-desc">위치 갱신 주기(초)를 직접 설정할 수 있습니다. 배터리 상황에 따라 조절하세요.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 팁 -->
+  <div class="section">
+    <div class="section-title">💡 사용 팁</div>
+    <div class="card" style="font-size:13px; line-height:1.8;">
+      <p>📍 <strong>마커를 탭하면</strong> 해당 참가자의 위도·경도·갱신 시간·상태 메시지를 확인할 수 있습니다.</p>
+      <p>🔴 <strong>위치 공유를 종료</strong>하면 내 마커가 지도에서 사라집니다. 재참가 시 이름을 다시 입력하면 됩니다.</p>
+      <p>🗑️ <strong>그룹 종료</strong>는 그룹 자체를 삭제합니다. 모든 참가자가 자동으로 로비로 이동합니다.</p>
+      <p>📶 <strong>GPS 신호가 약한 구간</strong>에서는 갱신 시간이 길어질 수 있습니다. 마커의 갱신 시각을 참고하세요.</p>
+    </div>
+  </div>
+
+  <footer>
+    created by Rae with COCO
+  </footer>
+
+</div>
+</body>
+</html>
