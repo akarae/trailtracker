@@ -273,7 +273,7 @@
 <div id="lobby" class="lobby-overlay">
   <div class="lobby-box">
     <div class="lobby-title">🏃 Trail Tracker</div>
-    <div class="lobby-ver">v0.25</div>
+    <div class="lobby-ver">v0.26</div>
     <div class="lobby-sub">그룹을 만들거나 초대 코드로 참가하세요</div>
     <div class="lobby-stats">
       <div class="lobby-stat-item">
@@ -324,7 +324,7 @@
 
 <header>
   <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.25</span> <a href="manual.html" target="_blank" style="font-size:11px;color:#888;font-weight:400;text-decoration:none;margin-left:4px;" title="퀵 가이드">❓</a></h1>
+  <h1>🏃 Trail Tracker <span style="font-size:10px;color:#aaa;font-weight:400">v0.26</span> <a href="manual.html" target="_blank" style="font-size:11px;color:#888;font-weight:400;text-decoration:none;margin-left:4px;" title="퀵 가이드">❓</a></h1>
   <span class="badge" id="memberCount">0명</span>
   <span class="group-badge" id="groupBadge" style="display:none"></span>
   <span class="fb-status status-wait" id="fbStatus">⚪ 연결 중</span>
@@ -390,7 +390,7 @@
 
     <!-- 참가자 목록 -->
     <div class="sidebar-members">
-      <div class="section-title">🏅 참가자 목록</div>
+      <div class="section-title">🏅 참가자 목록 <span id="memberCountBadge" style="font-size:11px;font-weight:400;color:#f39c12;margin-left:4px;"></span></div>
       <div class="member-list" id="memberList">
         <div class="no-members">참가자 없음</div>
       </div>
@@ -722,7 +722,7 @@ function enterGroup(groupId, groupName) {
   document.getElementById('groupInfoSection').style.display = 'block';
   document.getElementById('groupNameDisplay').textContent = groupName;
   document.getElementById('groupCodeDisplay').textContent = groupId;
-  document.getElementById('groupBadge').textContent = groupId;
+  document.getElementById('groupBadge').textContent = groupName;
   document.getElementById('groupBadge').style.display = 'inline-block';
 
   startGroupListeners();
@@ -785,7 +785,9 @@ function startGroupListeners() {
           .addTo(map).bindPopup(makePopup(displayName, m));
       }
     });
-    document.getElementById('memberCount').textContent = `${Object.keys(lastData).length}명`;
+    const cnt = Object.keys(lastData).length;
+    document.getElementById('memberCount').textContent = `${cnt}명`;
+    document.getElementById('memberCountBadge').textContent = `(${cnt}명)`;
     renderList();
     updateElevationMarkers();
   });
